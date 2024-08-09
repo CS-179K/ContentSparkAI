@@ -5,43 +5,55 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [user, setUser] = useState(null);
-    
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const auth = localStorage.getItem('isAuthenticated');
-        const storedUser = JSON.parse(localStorage.getItem('user'));
-        // const tokenExpiration = localStorage.getItem('tokenExpiration');
-        if (auth === 'true') {//&& new Date(tokenExpiration) > new Date()
-            setIsAuthenticated(true); // Set isAuthenticated based on localStorage
-            // Optionally, you can retrieve and set user data from localStorage as well
-            setUser(storedUser);
-        }else {
-            logout();
-        }
+        const checkAuth = () => {
+            const auth = localStorage.getItem('isAuthenticated');
+            const storedUser = JSON.parse(localStorage.getItem('user'));
+            const tokenExpiration = localStorage.getItem('tokenExpiration');
+            
+            if (auth === 'true' && tokenExpiration && new Date(parseInt(tokenExpiration)) > new Date()) {
+                setIsAuthenticated(true);
+                setUser(storedUser);
+            } else {
+                logout();
+            }
+            setIsLoading(false);
+        };
+
+        checkAuth();
+        const intervalId = setInterval(checkAuth, 60000); // Check every minute
+
+        return () => clearInterval(intervalId);
     }, []);
 
-    const login = (userData) => {
-        // const tokenExpiration = new Date().getTime() + expirationTime;
+    const login = (userData, expirationTime) => {
+        const tokenExpiration = new Date().getTime() + expirationTime;
         setIsAuthenticated(true);
-        setUser(userData); // Set user data upon successful login
-        localStorage.setItem('isAuthenticated', 'true'); // Persist authentication state
-        localStorage.setItem('user', JSON.stringify(userData)); // Optionally store user data
-        // localStorage.setItem('tokenExpiration', tokenExpiration);
+        setUser(userData);
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('tokenExpiration', tokenExpiration.toString());
     };
 
     const logout = () => {
         setIsAuthenticated(false);
-        setUser(null); // Clear user data on logout
-        localStorage.removeItem('isAuthenticated'); // Clear authentication state
-        localStorage.removeItem('user'); // Optionally clear user data
-        // localStorage.removeItem('tokenExpiration');
+        setUser(null);
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('user');
+        localStorage.removeItem('tokenExpiration');
     };
 
+    if (isLoading) {
+        return <div>Loading...</div>;
+    }
+
     return (
-        <AuthContext.Provider value={{ isAuthenticated, user, login, logout ,setIsAuthenticated}}>
+        <AuthContext.Provider value={{ isAuthenticated, user, login, logout, setIsAuthenticated }}>
             {children}
         </AuthContext.Provider>
     );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext) || {};
