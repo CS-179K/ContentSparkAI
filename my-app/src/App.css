@@ -2,3 +2,20 @@ body {
   background: #000000;
   overflow-x: hidden;
 }
+/*Login*/
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;   
+  height: 100vh;      
+}
+.login-container .signin-box img {
+  display: block;
+  margin: 0 auto 20px;
+  width: 200px;
+  height: auto;
+}
+.login-container .social-signin {
+  position: relative;
+  left: 9px;
+}
