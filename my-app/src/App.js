@@ -7,7 +7,7 @@ import Login from './components/Login/Login';
 import { GoogleOAuthProvider } from '@react-oauth/google';  
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './components/Context/AuthContext';
-import HandleGitHubCallback from './components/HandleGitHubCallback.js';
+// import HandleGitHubCallback from './components/HandleGitHubCallback.js';
 
 
 import "./App.css";
@@ -36,7 +36,7 @@ function App() {
           <ConfigProvider theme={{ algorithm: darkAlgorithm }}>
             <Routes>
               <Route path="/" element={<Login />} />
-              <Route path="/github-callback" element={<HandleGitHubCallback />} />
+              {/* <Route path="/github-callback" element={<HandleGitHubCallback />} /> */}
               
               <Route path="/home" element={
                 <LayoutWithHeader>
