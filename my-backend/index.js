@@ -128,11 +128,15 @@ const filterValidationRules = [
   body('contentType').trim().escape(),
   body('industry').trim().escape(),
   body('ageRange').trim().escape(),
-  body('interests').optional().isArray().customSanitizer(value => Array.isArray(value) ? value.map(item => item.trim().escape()) : []),
+  body('interests').optional().isArray().customSanitizer(value => 
+    Array.isArray(value) ? value.map(item => typeof item === 'string' ? item.trim() : item) : []
+  ),
   body('gender').trim().escape(),
   body('incomeLevel').trim().escape(),
   body('tone').trim().escape(),
-  body('themes').optional().isArray().customSanitizer(value => Array.isArray(value) ? value.map(item => item.trim().escape()) : []),
+  body('themes').optional().isArray().customSanitizer(value => 
+    Array.isArray(value) ? value.map(item => typeof item === 'string' ? item.trim() : item) : []
+  ),
   body('contentGoal').trim().escape(),
   body('maxContentLength').trim().escape(),
   body('language').trim().escape()
@@ -140,17 +144,21 @@ const filterValidationRules = [
 
 // Endpoint to save filter data to the database with validation and sanitization
 app.post("/api/saveFilter", filterValidationRules, async (req, res) => {
+  console.log('Received filter data:', JSON.stringify(req.body, null, 2));
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
+    console.log('Validation errors:', errors.array());
     return res.status(400).json({ errors: errors.array() });
   }
 
   try {
     const filterData = new Filter(req.body);
+    console.log('Filter data after validation:', JSON.stringify(filterData, null, 2));
     await filterData.save();
     res.status(201).send({ message: "Filter saved successfully!" });
   } catch (error) {
+    console.error('Error saving filter:', error);
     res.status(500).send({ error: "Failed to save filter data" });
   }
 });
@@ -160,11 +168,15 @@ const contentValidationRules = [
   body('filters.contentType').trim().escape(),
   body('filters.industry').trim().escape(),
   body('filters.ageRange').trim().escape(),
-  body('filters.interests').optional().isArray().customSanitizer(value => Array.isArray(value) ? value.map(item => item.trim().escape()) : []),
+  body('filters.interests').optional().isArray().customSanitizer(value => 
+    Array.isArray(value) ? value.map(item => typeof item === 'string' ? item.trim() : item) : []
+  ),
   body('filters.gender').trim().escape(),
   body('filters.incomeLevel').trim().escape(),
   body('filters.tone').trim().escape(),
-  body('filters.themes').optional().isArray().customSanitizer(value => Array.isArray(value) ? value.map(item => item.trim().escape()) : []),
+  body('filters.themes').optional().isArray().customSanitizer(value => 
+    Array.isArray(value) ? value.map(item => typeof item === 'string' ? item.trim() : item) : []
+  ),
   body('filters.contentGoal').trim().escape(),
   body('filters.maxContentLength').trim().escape(),
   body('filters.language').trim().escape(),
@@ -174,9 +186,11 @@ const contentValidationRules = [
 
 // Endpoint to save generated content to the database with validation and sanitization
 app.post("/api/save-content", contentValidationRules, async (req, res) => {
+  console.log('Received content data:', JSON.stringify(req.body, null, 2));
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
+    console.log('Validation errors:', errors.array());
     return res.status(400).json({ errors: errors.array() });
   }
 
@@ -189,12 +203,13 @@ app.post("/api/save-content", contentValidationRules, async (req, res) => {
       prompt,
       response,
     });
-
+    console.log('Content data after validation:', JSON.stringify(newContent, null, 2));
     // Save the document to the database
     await newContent.save();
 
     res.status(201).send({ message: "Content saved successfully!" });
   } catch (error) {
+    console.error('Error saving content:', error);
     res.status(500).send({ error: "Failed to save content" });
   }
 });
