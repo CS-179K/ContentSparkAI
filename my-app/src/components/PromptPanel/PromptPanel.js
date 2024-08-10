@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Button, Input, Card } from "antd";
 import DynamicResponse from "../DynamicResponse/DynamicResponse";
-import axios from "axios"; // Add Axios import
 
 const { TextArea } = Input;
 
@@ -66,26 +65,12 @@ const PromptPanel = ({ filters, onSubmit }) => {
       const result = await model.generateContent(fullPrompt);
       const generatedText = result.response.text();
       setResponse(generatedText);
-
-      // Save the content to the database
-      await saveToDatabase({ filters: selectedFilters, prompt, response: generatedText });
-
       onSubmit({ filters: selectedFilters, prompt, response: generatedText });
     } catch (error) {
       console.error("Error generating content:", error);
       setResponse("An error occurred while generating content.");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const saveToDatabase = async (data) => {
-    try {
-      // Make a POST request to your backend API to save the data
-      const response = await axios.post("http://localhost:5000/api/save-content", data); // Replace with your API endpoint
-      console.log("Data saved successfully:", response.data);
-    } catch (error) {
-      console.error("Error saving data:", error);
     }
   };
 
