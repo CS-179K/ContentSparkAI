@@ -29,14 +29,16 @@ const Home = () => {
   };
 
   return (
-    <Row gutter={16} style={{ padding: "20px" }}>
-      <Col span={12}>
-        <FilterForm onSave={handleSaveFilters} onChange={handleSaveFilters} />
-      </Col>
-      <Col span={12}>
-        <PromptPanel filters={savedFilters} onSubmit={handleSubmit} />
-      </Col>
-    </Row>
+    <>
+      <Row gutter={16} style={{ padding: "20px", placeItems: "flex-start" }}>
+        <Col span={12}>
+          <FilterForm onSave={handleSaveFilters} onChange={handleSaveFilters} />
+        </Col>
+        <Col span={12}>
+          <PromptPanel filters={savedFilters} onSubmit={handleSubmit} />
+        </Col>
+      </Row>
+    </>
   );
 };
 
