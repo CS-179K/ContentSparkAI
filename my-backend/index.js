@@ -4,58 +4,68 @@ const mongoose = require('mongoose');
 const cors = require('cors'); 
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const expressSanitizer = require('express-sanitizer');
-const winston = require('winston');
-const { body, validationResult, sanitizeBody } = require('express-validator');
+const hpp = require('hpp');
+const { body, validationResult } = require('express-validator');
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 5005;
 
-// Logging configuration
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({ filename: 'error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'combined.log' }),
-  ],
-});
-
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.simple(),
-  }));
-}
+app.disable('x-powered-by');
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 app.use(expressSanitizer());
-app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
 app.use(helmet());
+app.use(helmet.referrerPolicy({ policy: 'strict-origin-when-cross-origin' }));
+app.use(helmet.noSniff());
+app.use(helmet.xssFilter());
+app.use(hpp());
 
 // CSP configuration
 app.use(
   helmet.contentSecurityPolicy({
-    useDefaults: true,
+    useDefaults: false,
     directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
-      styleSrc: ["'self'", "https://cdn.jsdelivr.net"],
-      imgSrc: ["'self'", "data:"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      frameSrc: ["'none'"],
+      defaultSrc: ["'none'"],
+      scriptSrc: [
+        "'self'",
+        "'strict-dynamic'",
+        "https://accounts.google.com/gsi/client",
+        "https://apis.google.com",
+      ],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
+      imgSrc: ["'self'", "data:", "https://accounts.google.com"],
+      connectSrc: [
+        "'self'",
+        "https://accounts.google.com",
+        "https://www.googleapis.com",
+      ],
+      fontSrc: ["'self'"],
       objectSrc: ["'none'"],
+      mediaSrc: ["'none'"],
+      frameSrc: ["https://accounts.google.com"],
       childSrc: ["'none'"],
+      formAction: ["'self'", "https://accounts.google.com"],
+      frameAncestors: ["'none'"],
+      baseUri: ["'self'"],
+      manifestSrc: ["'self'"],
+      workerSrc: ["'none'"],
       upgradeInsecureRequests: [],
+      blockAllMixedContent: [],
     },
+  })
+);
+
+// HSTS (HTTP Strict Transport Security)
+app.use(
+  helmet.hsts({
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true,
   })
 );
 
@@ -72,8 +82,8 @@ mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => logger.info('MongoDB connected'))
-.catch((err) => logger.error('Error connecting to MongoDB:', err));
+.then(() => console.log('MongoDB connected'))
+.catch((err) => console.log('Error connecting to MongoDB:', err));
 
 // Define schemas and models
 const filterSchema = new mongoose.Schema({
@@ -141,7 +151,6 @@ app.post("/api/saveFilter", filterValidationRules, async (req, res) => {
     await filterData.save();
     res.status(201).send({ message: "Filter saved successfully!" });
   } catch (error) {
-    logger.error('Failed to save filter data:', error);
     res.status(500).send({ error: "Failed to save filter data" });
   }
 });
@@ -186,18 +195,21 @@ app.post("/api/save-content", contentValidationRules, async (req, res) => {
 
     res.status(201).send({ message: "Content saved successfully!" });
   } catch (error) {
-    logger.error('Failed to save content:', error);
     res.status(500).send({ error: "Failed to save content" });
   }
 });
 
 // Custom Error Handling Middleware
 app.use((err, req, res, next) => {
-  logger.error(err.stack);
+  if (process.env.NODE_ENV === 'production' && !req.secure) {
+    return res.redirect('https://' + req.headers.host + req.url);
+  }
+  next();
+  console.error(err.stack);
   res.status(500).send({ error: 'Something went wrong!' });
 });
 
 // Start the server
 app.listen(port, () => {
-  logger.info(`Server running on http://localhost:${port}`);
+  console.log(`Server running on http://localhost:${port}`);
 });

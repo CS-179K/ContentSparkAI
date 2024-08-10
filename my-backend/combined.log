@@ -9,3 +9,21 @@
 {"level":"info","message":"MongoDB connected","timestamp":"2024-08-09T17:07:52.506Z"}
 {"level":"info","message":"::1 - - [09/Aug/2024:17:08:22 +0000] \"POST /api/saveFilter HTTP/1.1\" 201 40 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0\"","timestamp":"2024-08-09T17:08:22.115Z"}
 {"level":"info","message":"::1 - - [09/Aug/2024:17:11:23 +0000] \"POST /api/save-content HTTP/1.1\" 201 41 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0\"","timestamp":"2024-08-09T17:11:23.115Z"}
+{"level":"info","message":"Server running on http://localhost:5001","timestamp":"2024-08-10T04:27:06.021Z"}
+{"level":"info","message":"MongoDB connected","timestamp":"2024-08-10T04:27:06.035Z"}
+{"level":"info","message":"Server running on http://localhost:5001","timestamp":"2024-08-10T04:31:58.234Z"}
+{"level":"info","message":"MongoDB connected","timestamp":"2024-08-10T04:31:58.245Z"}
+{"level":"info","message":"Server running on http://localhost:5001","timestamp":"2024-08-10T04:35:02.346Z"}
+{"level":"info","message":"MongoDB connected","timestamp":"2024-08-10T04:35:02.360Z"}
+{"level":"info","message":"Server running on http://localhost:5001","timestamp":"2024-08-10T04:39:30.278Z"}
+{"level":"info","message":"MongoDB connected","timestamp":"2024-08-10T04:39:30.289Z"}
+{"level":"info","message":"Server running on http://localhost:5001","timestamp":"2024-08-10T04:40:18.468Z"}
+{"level":"info","message":"MongoDB connected","timestamp":"2024-08-10T04:40:18.478Z"}
+{"level":"info","message":"Server running on http://localhost:5005","timestamp":"2024-08-10T04:44:21.588Z"}
+{"level":"info","message":"MongoDB connected","timestamp":"2024-08-10T04:44:21.601Z"}
+{"level":"info","message":"::1 - - [10/Aug/2024:04:46:25 +0000] \"POST /api/save-content HTTP/1.1\" 201 41 \"http://localhost:3000/\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36\"","timestamp":"2024-08-10T04:46:25.431Z"}
+{"level":"info","message":"::1 - - [10/Aug/2024:17:39:20 +0000] \"POST /api/save-content HTTP/1.1\" 201 41 \"http://localhost:3000/\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36\"","timestamp":"2024-08-10T17:39:20.527Z"}
+{"level":"info","message":"::1 - - [10/Aug/2024:17:39:43 +0000] \"POST /api/saveFilter HTTP/1.1\" 201 40 \"http://localhost:3000/\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36\"","timestamp":"2024-08-10T17:39:43.609Z"}
+{"level":"info","message":"::1 - - [10/Aug/2024:17:39:53 +0000] \"POST /api/saveFilter HTTP/1.1\" 201 40 \"http://localhost:3000/\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36\"","timestamp":"2024-08-10T17:39:53.733Z"}
+{"level":"info","message":"::1 - - [10/Aug/2024:17:41:00 +0000] \"POST /api/saveFilter HTTP/1.1\" 201 40 \"http://localhost:3000/\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36\"","timestamp":"2024-08-10T17:41:00.447Z"}
+{"level":"info","message":"::1 - - [10/Aug/2024:17:41:38 +0000] \"POST /api/saveFilter HTTP/1.1\" 201 40 \"http://localhost:3000/\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36\"","timestamp":"2024-08-10T17:41:38.939Z"}
