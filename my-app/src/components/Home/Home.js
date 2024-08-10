@@ -5,15 +5,18 @@ import FilterForm from "../Filter/FilterForm";
 import PromptPanel from "../PromptPanel/PromptPanel";
 
 const Home = () => {
-  const [savedFilters, setSavedFilters] = useState(null);
+  const [savedFilters, setSavedFilters] = useState({});
 
   const handleSaveFilters = async (filters, shouldSave) => {
     try {
+      setSavedFilters(prevFilters => ({
+        ...prevFilters,
+        ...filters
+      }));
       if(shouldSave) {
         const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/saveFilter`, filters);
         console.log("Filter saved successfully:", response.data);
       }
-      setSavedFilters(filters);
     } catch (error) {
       console.error("There was an error saving the data!", error);
     }
