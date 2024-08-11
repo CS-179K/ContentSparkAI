@@ -15,6 +15,3 @@ Task 5: Integrate GPT/Claude API
 1. Ensure seamless integration with GPT/Claude API filters
 2. Test content accuracy with specified filters
 3. Monitor API Latency and Error Rates Post-Integration
-
-Task 7: Testing Filter Functionality
-1. Validate Persistent State of Filters Across Sessions
