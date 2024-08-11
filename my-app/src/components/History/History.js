@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FixedSizeList as List } from 'react-window';
-import './HistoryList.css'; 
 import DynamicResponse from '../DynamicResponse/DynamicResponse';
-const HistoryList = () => {
+
+const History = () => {
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    axios.get('http://localhost:5005/api/get-content') // Adjust the endpoint if needed
+    axios.get(`${process.env.REACT_APP_API_BASE_URL}/get-content`) // Adjust the endpoint if needed
       .then(response => {
         console.log(response.data); // Log the fetched data to ensure it's correct
         setHistory(response.data);
@@ -47,8 +47,7 @@ const HistoryList = () => {
   );
 
   return (
-    <div>
-      <h2>History of Generated Content</h2>
+    <div className='hstry-container'>
       <div style={{ display: 'flex', borderBottom: '2px solid white', color: 'white', fontWeight: 'bold' }}>
         <div style={{ width: '15%', padding: '10px' }}>Content ID</div>
         <div style={{ width: '25%', padding: '10px' }}>Filters</div>
@@ -67,4 +66,4 @@ const HistoryList = () => {
   );
 };
 
-export default HistoryList;
+export default History;
