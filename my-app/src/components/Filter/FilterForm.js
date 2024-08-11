@@ -62,7 +62,7 @@ const FilterForm = ({ onSave }) => {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item name="ageRange" label="Age Range of Audience">
-              <Select placeholder="Select age range" showSearch>
+              <Select placeholder="Select age range" showSearch allowClear>
                 <Option value="under 13">Under 13</Option>
                 <Option value="13-17">13-17</Option>
                 <Option value="18-24">18-24</Option>
@@ -99,7 +99,7 @@ const FilterForm = ({ onSave }) => {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item name="gender" label="Gender">
-              <Select placeholder="Select gender" showSearch>
+              <Select placeholder="Select gender" showSearch allowClear>
                 <Option value="male">Male</Option>
                 <Option value="female">Female</Option>
                 <Option value="all">All</Option>
@@ -108,7 +108,7 @@ const FilterForm = ({ onSave }) => {
           </Col>
           <Col span={12}>
             <Form.Item name="incomeLevel" label="Income Level">
-              <Select placeholder="Select income level" showSearch>
+              <Select placeholder="Select income level" showSearch allowClear>
                 <Option value="low">Low</Option>
                 <Option value="medium">Medium</Option>
                 <Option value="high">High</Option>
@@ -120,7 +120,7 @@ const FilterForm = ({ onSave }) => {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item name="tone" label="Tone of Content">
-              <Select placeholder="Select tone" showSearch>
+              <Select placeholder="Select tone" showSearch allowClear>
                 <Option value="professional">Professional</Option>
                 <Option value="casual">Casual</Option>
                 <Option value="humorous">Humorous</Option>
@@ -163,7 +163,7 @@ const FilterForm = ({ onSave }) => {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item name="contentGoal" label="Content Goal">
-              <Select placeholder="Select content goal" showSearch>
+              <Select placeholder="Select content goal" showSearch allowClear>
                 <Option value="brandAwareness">Brand Awareness</Option>
                 <Option value="leadGeneration">Lead Generation</Option>
                 <Option value="educational">Educational</Option>
@@ -184,7 +184,7 @@ const FilterForm = ({ onSave }) => {
               name="maxContentLength"
               label="Content Length (max words)"
             >
-              <Select placeholder="Select Max Content Length" showSearch>
+              <Select placeholder="Select Max Content Length" showSearch allowClear>
                 <Option value="short">Short</Option>
                 <Option value="medium">Medium</Option>
                 <Option value="long">Long</Option>
@@ -194,7 +194,7 @@ const FilterForm = ({ onSave }) => {
         </Row>
 
         <Form.Item name="language" label="Language">
-          <Select placeholder="Select language" showSearch>
+          <Select placeholder="Select language" showSearch allowClear>
             <Option value="Arabic (ar)">Arabic (ar)</Option>
             <Option value="Bengali (bn)">Bengali (bn)</Option>
             <Option value="Bulgarian (bg)">Bulgarian (bg)</Option>

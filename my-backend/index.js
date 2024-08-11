@@ -98,7 +98,6 @@ const filterSchema = new mongoose.Schema({
   contentGoal: String,
   maxContentLength: String,
   language: String,
-  isFavourite: { type: Boolean, default: false }
 });
 
 const Filter = mongoose.model("Filter", filterSchema);
@@ -119,6 +118,7 @@ const contentSchema = new mongoose.Schema({
   },
   prompt: String,
   response: String,
+  isFavourite: { type: Boolean, default: false }
 });
 
 const GeneratedContent = mongoose.model("GeneratedContent", contentSchema);
