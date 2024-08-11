@@ -214,6 +214,24 @@ app.post("/api/save-content", contentValidationRules, async (req, res) => {
   }
 });
 
+app.get('/api/test', (req, res) => {
+  res.send('Test route is working!');
+});
+
+// Endpoint to get all generated content from the database
+app.get("/api/get-content", async (req, res) => {
+  try {
+    const content = await GeneratedContent.find();
+    console.log(content); // Log the content to ensure it's being retrieved
+    res.status(200).json(content);
+  } catch (error) {
+    console.error('Error fetching content:', error); // Log the error for debugging
+    res.status(500).send({ error: "Failed to fetch content" });
+  }
+});
+
+
+
 // Custom Error Handling Middleware
 app.use((err, req, res, next) => {
   if (process.env.NODE_ENV === 'production' && !req.secure) {
