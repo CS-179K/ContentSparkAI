@@ -1,0 +1,14 @@
+Task 1: Detect if user is a first time user
+1. New user signs up and logs in for the first time - system should flag them as a first-time user.
+2. Existing user logs in - system should not flag them as a first-time user.
+3. User clears browser cache and logs in again - system should still recognize them as an existing user.
+
+Task 2: Design Tutorial Content
+1. Tutorial covers all major features of the application.
+2. Content is concise and easy to understand for new users.
+3. Tutorial includes both text explanations and visual aids (e.g., screenshots, GIFs).
+
+Task 3: Develop Interactive Tutorial UI
+1. Tutorial overlay appears correctly and doesn't obstruct important UI elements.
+2. Next/Previous buttons function correctly, moving through tutorial steps.
+3. User can exit the tutorial at any point and resume later from where they left off.
