@@ -1,0 +1,17 @@
+Task 1: POC on figuring out how to generate relevant strategy (upload txt, pdf, tag based etc)
+Test cases:
+1. Upload a plain text file (.txt) containing previous content and verify that the system can extract relevant information for use in content generation.
+2. Upload a PDF file with formatted text and images, and confirm that the system can parse and extract useful content for generation.
+3. Input a series of tags related to previous content and verify if the system can use these tags to inform the content generation process.
+
+Task 2: Implementation of the upload strategy
+Test cases:
+1. Upload a large file (e.g., 10MB PDF) and verify that the system handles it without timing out or crashing.
+2. Upload files with different encodings (e.g., UTF-8, UTF-16) and confirm that the content is correctly extracted and processed.
+3. Attempt to upload an unsupported file type (e.g., .docx if not supported) and verify that the system provides an appropriate error message.
+
+Task 3: UI Component
+Test cases:
+1. Drag and drop a file into the upload area and verify that it's correctly added to the system.
+2. Select multiple files for upload and confirm that all files are processed and added to the relevant content pool.
+3. After uploading, verify that the UI displays a summary of the extracted content or tags, allowing the user to edit or remove items before proceeding with content generation.
