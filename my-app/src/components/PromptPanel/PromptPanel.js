@@ -87,6 +87,9 @@ const PromptPanel = ({
       if (isFavourite) {
         message.success(response.data);
       }
+      if(isTutorialActive) {
+        onStepComplete();
+      }
     } catch (error) {
       message.error(error.message);
     } finally {
