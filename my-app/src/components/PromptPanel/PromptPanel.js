@@ -121,7 +121,7 @@ const PromptPanel = ({
           onClick={() => handleSubmit(false)}
           loading={isLoading}
           data-tutorial="generate"
-          disabled={isTutorialActive && tutorialStep !== 3}
+          disabled={(isTutorialActive && tutorialStep !== 3) || !prompt}
         >
           Generate Content
         </Button>
@@ -129,7 +129,7 @@ const PromptPanel = ({
           type="primary"
           onClick={() => handleSubmit(true)}
           disabled={!(response && !isLoading)}
-          data-tutorial="generated-content"
+          data-tutorial="mark-favourite"
         >
           Save Content to Favourites
         </Button>
@@ -141,6 +141,7 @@ const PromptPanel = ({
             overflow: "auto",
             marginTop: "16px",
           }}
+          data-tutorial="generated-content"
         >
           <h3>Generated Content:</h3>
           <DynamicResponse content={response} />

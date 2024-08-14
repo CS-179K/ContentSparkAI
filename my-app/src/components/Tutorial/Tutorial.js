@@ -31,10 +31,11 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
       position: "left",
     },
     {
-      target: '[data-tutorial="generated-content"]',
+      target: '[data-tutorial="mark-favourite"]',
       content:
-        "Great job! Your content has been generated. Take a look at the result. If you're happy with it, you can click the <b>'Mark as Favourite'</b> button to save it for future reference.",
+        "Great job! Your content has been generated. Take a look at the result. If you're happy with it, you can click the <b>'Save content to favourite'</b> button to save it for future reference.",
       position: "left",
+      additionalHighlight: '[data-tutorial="generated-content"]'
     },
     {
       target: '[data-tutorial="save-filters"]',
@@ -62,6 +63,12 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
       if (targetElement) {
         targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
         highlightElement(targetElement);
+        if (steps[currentStep].additionalHighlight) {
+          const additionalElement = document.querySelector(steps[currentStep].additionalHighlight);
+          if (additionalElement) {
+            highlightElement(additionalElement);
+          }
+        }
         positionPopup(targetElement, steps[currentStep].position);
       }
     }
@@ -69,6 +76,10 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
       steps.forEach((step) => {
         const el = document.querySelector(step.target);
         if (el) el.style.boxShadow = "none";
+        if (step.additionalHighlight) {
+          const additionalEl = document.querySelector(step.additionalHighlight);
+          if (additionalEl) additionalEl.style.boxShadow = "none";
+        }
       });
     };
   }, [visible, currentStep]);
