@@ -39,7 +39,16 @@ const FilterForm = ({
       >
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item name="contentType" label="Type of Content" required>
+            <Form.Item
+              name="contentType"
+              label="Type of Content"
+              rules={[
+                {
+                  required: true,
+                  message: "Please input!",
+                },
+              ]}
+            >
               <Select
                 placeholder="Select content type"
                 showSearch
@@ -62,7 +71,16 @@ const FilterForm = ({
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="industry" label="Industry/Category" required>
+            <Form.Item
+              name="industry"
+              label="Industry/Category"
+              rules={[
+                {
+                  required: true,
+                  message: "Please input!",
+                },
+              ]}
+            >
               <Select
                 placeholder="Select industry"
                 showSearch
@@ -270,8 +288,8 @@ const FilterForm = ({
         </Form.Item>
 
         <Form.Item>
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             htmlType="submit"
             data-tutorial="save-filters"
             disabled={isTutorialActive && tutorialStep !== 5}
