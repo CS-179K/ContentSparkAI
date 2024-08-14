@@ -8,9 +8,9 @@ import AppHeader from "../Header/AppHeader";
 
 const Home = () => {
   const [savedFilters, setSavedFilters] = useState({});
-  const [isFirstTimeUser, setIsFirstTimeUser] = useState(true);
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
-  const [isTutorialActive, setIsTutorialActive] = useState(true);
+  const [isTutorialActive, setIsTutorialActive] = useState(false);
 
   useEffect(() => {
     const tutorialCompleted = localStorage.getItem("tutorialCompleted");
@@ -26,10 +26,10 @@ const Home = () => {
       }));
       if (shouldSave) {
         const response = await axios.post(
-          `${process.env.REACT_APP_API_BASE_URL}/saveFilter1`,
+          `${process.env.REACT_APP_API_BASE_URL}/saveFilter`,
           filters
         );
-        message.success(response.data);
+        message.success(response.data.message);
         if (isTutorialActive) {
           handleTutorialNext();
         }
