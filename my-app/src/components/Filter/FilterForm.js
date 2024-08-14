@@ -13,7 +13,7 @@ const FilterForm = ({
   const [form] = Form.useForm();
 
   const handleSave = (values) => {
-    if (!isTutorialActive) onSave(values, true);
+    onSave(values, true);
   };
 
   const handleChange = (changedValues, allValues) => {
@@ -270,8 +270,13 @@ const FilterForm = ({
         </Form.Item>
 
         <Form.Item>
-          <Button type="primary" htmlType="submit">
-            Save Filters
+          <Button 
+            type="primary" 
+            htmlType="submit"
+            data-tutorial="save-filters"
+            disabled={isTutorialActive && tutorialStep !== 5}
+          >
+            Save Filters to Favourites
           </Button>
         </Form.Item>
       </Form>

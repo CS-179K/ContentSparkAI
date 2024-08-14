@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "antd";
 
-const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onSkip }) => {
+const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
   const [visible, setVisible] = useState(isFirstTimeUser);
   const popupRef = useRef(null);
 
@@ -29,6 +29,30 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onSkip }) => {
       content:
         "You're all set! Click the <b>'Generate Content'</b> button to create your AI-powered content based on your selections and input. Get ready to see the magic happen!",
       position: "left",
+    },
+    {
+      target: '[data-tutorial="generated-content"]',
+      content:
+        "Great job! Your content has been generated. Take a look at the result. If you're happy with it, you can click the <b>'Mark as Favourite'</b> button to save it for future reference.",
+      position: "left",
+    },
+    {
+      target: '[data-tutorial="save-filters"]',
+      content:
+        "If you want to save your current filter settings for future use, click the <b>'Save Filters'</b> button. This will store your preferences, making it easier to generate similar content in the future.",
+      position: "right",
+    },
+    {
+      target: '[data-tutorial="history-tab"]',
+      content:
+        "The <b>History</b> tab keeps track of all the content you've generated. Click on it to view your past creations and potentially reuse or modify them.",
+      position: "bottom",
+    },
+    {
+      target: '[data-tutorial="favourites-tab"]',
+      content:
+        "The <b>Favourites</b> tab is where you can find all the content you've marked as favourite. It's a great way to keep your best creations easily accessible.",
+      position: "bottom",
     },
   ];
 
@@ -68,23 +92,36 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onSkip }) => {
       const rect = targetElement.getBoundingClientRect();
       const popupRect = popupRef.current.getBoundingClientRect();
 
-      if (position === "right") {
-        popupRef.current.style.left = `${rect.right + 20}px`;
-        popupRef.current.style.top = `${
-          rect.top + rect.height / 2 - popupRect.height / 2
-        }px`;
-      } else {
-        popupRef.current.style.left = `${rect.left - popupRect.width - 20}px`;
-        popupRef.current.style.top = `${
-          rect.top + rect.height / 2 - popupRect.height / 2
-        }px`;
+      switch (position) {
+        case "right":
+          popupRef.current.style.left = `${rect.right + 20}px`;
+          popupRef.current.style.top = `${rect.top + rect.height / 2 - popupRect.height / 2}px`;
+          break;
+        case "left":
+          popupRef.current.style.left = `${rect.left - popupRect.width - 20}px`;
+          popupRef.current.style.top = `${rect.top + rect.height / 2 - popupRect.height / 2}px`;
+          break;
+        case "bottom":
+          popupRef.current.style.left = `${rect.left + rect.width / 2 - popupRect.width / 2}px`;
+          popupRef.current.style.top = `${rect.bottom + 20}px`;
+          break;
+        default:
+          break;
       }
     }
   };
 
   const handleSkip = () => {
     setVisible(false);
-    onSkip();
+    onComplete();
+  };
+
+  const handleNext = () => {
+    if(currentStep === 7) {
+      handleSkip();
+    } else {
+      onNext();
+    }
   };
 
   if (!visible) return null;
@@ -102,9 +139,16 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onSkip }) => {
         <p
           dangerouslySetInnerHTML={{ __html: steps[currentStep]?.content }}
         ></p>
-        <Button type="primary" onClick={handleSkip}>
+        {currentStep < 7 && (
+        <Button type="primary" onClick={handleSkip} style={{ marginRight: '10px' }}>
           Skip Tutorial
         </Button>
+        )}
+        {currentStep >= 4 && (
+          <Button type="primary" onClick={handleNext}>
+            {currentStep === steps.length - 1 ? "Done" : "Next"}
+          </Button>
+        )}
       </div>
       <style jsx>{`
         .tutorial-overlay .main-overlay {
@@ -145,6 +189,12 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onSkip }) => {
         .tutorial-content.left::before {
           left: 100%;
           border-left-color: white;
+        }
+        .tutorial-content.bottom::before {
+          bottom: 100%;
+          left: 50%;
+          margin-left: -10px;
+          border-bottom-color: white;
         }
       `}</style>
     </div>

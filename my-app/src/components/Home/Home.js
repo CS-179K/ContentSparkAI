@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
-import { Row, Col } from "antd";
+import React, { useState, useEffect } from "react";
+import { Row, Col, message } from "antd";
 import axios from "axios";
 import FilterForm from "../Filter/FilterForm";
 import PromptPanel from "../PromptPanel/PromptPanel";
 import Tutorial from "../Tutorial/Tutorial";
+import AppHeader from "../Header/AppHeader";
 
 const Home = () => {
   const [savedFilters, setSavedFilters] = useState({});
@@ -18,7 +19,6 @@ const Home = () => {
   }, []);
 
   const handleSaveFilters = async (filters, shouldSave) => {
-    if (isTutorialActive) return;
     try {
       setSavedFilters((prevFilters) => ({
         ...prevFilters,
@@ -26,26 +26,34 @@ const Home = () => {
       }));
       if (shouldSave) {
         const response = await axios.post(
-          `${process.env.REACT_APP_API_BASE_URL}/saveFilter`,
+          `${process.env.REACT_APP_API_BASE_URL}/saveFilter1`,
           filters
         );
-        console.log("Filter saved successfully:", response.data);
+        message.success(response.data);
+        if (isTutorialActive) {
+          handleTutorialNext();
+        }
       }
     } catch (error) {
-      console.error("There was an error saving the data!", error);
+      message.error(error.message);
     }
   };
 
-  const handleSubmit = async (data) => {
-    if (isTutorialActive) return;
+  const handleContentSubmit = async (data, isFavourite) => {
     try {
+      const url = isFavourite ? "save-favourite-content" : "save-content";
       const response = await axios.post(
-        `${process.env.REACT_APP_API_BASE_URL}/save-content`,
+        `${process.env.REACT_APP_API_BASE_URL}/${url}`,
         data
       );
-      console.log("Data saved successfully:", response.data);
+      if (isFavourite) {
+        message.success(response.data);
+      }
+      if (isTutorialActive) {
+        handleTutorialNext();
+      }
     } catch (error) {
-      console.error("Error saving data:", error);
+      message.error("Failed to save content. Please try again.");
     }
   };
 
@@ -55,31 +63,25 @@ const Home = () => {
     localStorage.setItem("tutorialCompleted", "true");
   };
 
-  const handleTutorialSkip = () => {
-    setIsFirstTimeUser(false);
-    setIsTutorialActive(false);
-    localStorage.setItem("tutorialCompleted", "true");
-  };
-
-  const handleTutorialStepComplete = () => {
+  const handleTutorialNext = () => {
     setTutorialStep((prevStep) => prevStep + 1);
   };
 
   return (
     <>
+      <AppHeader isTutorialActive={isTutorialActive} />
       <Row
         gutter={16}
         style={{
           padding: "20px",
           placeItems: "flex-start",
-          pointerEvents: isTutorialActive ? "none" : "auto",
         }}
       >
         <Col span={12}>
           <FilterForm
             onSave={handleSaveFilters}
             onChange={handleSaveFilters}
-            onStepComplete={handleTutorialStepComplete}
+            onStepComplete={handleTutorialNext}
             tutorialStep={tutorialStep}
             isTutorialActive={isTutorialActive}
           />
@@ -87,8 +89,8 @@ const Home = () => {
         <Col span={12}>
           <PromptPanel
             filters={savedFilters}
-            onSubmit={handleSubmit}
-            onStepComplete={handleTutorialStepComplete}
+            onSubmit={handleContentSubmit}
+            onStepComplete={handleTutorialNext}
             tutorialStep={tutorialStep}
             isTutorialActive={isTutorialActive}
           />
@@ -98,7 +100,7 @@ const Home = () => {
         <Tutorial
           isFirstTimeUser={isFirstTimeUser}
           onComplete={handleTutorialComplete}
-          onSkip={handleTutorialSkip}
+          onNext={handleTutorialNext}
           currentStep={tutorialStep}
         />
       )}

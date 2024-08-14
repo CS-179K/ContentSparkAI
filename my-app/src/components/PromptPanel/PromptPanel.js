@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Button, Input, Card } from "antd";
+import { Button, Input, Card, Space } from "antd";
 import DynamicResponse from "../DynamicResponse/DynamicResponse";
 
 const { TextArea } = Input;
@@ -57,27 +57,28 @@ const PromptPanel = ({
     `;
   };
 
-  const handleSubmit = async () => {
-    if (isTutorialActive && tutorialStep !== 3) return;
-
+  const handleSubmit = async (isFavourite = false) => {
     setIsLoading(true);
     try {
-      const selectedFilters = Object.fromEntries(
-        Object.entries(filters).filter(
-          ([_, value]) => value !== undefined && value !== ""
-        )
-      );
+      let generatedText = response;
+      let selectedFilters;
+      if (!isFavourite) {
+        selectedFilters = Object.fromEntries(
+          Object.entries(filters).filter(
+            ([_, value]) => value !== undefined && value !== ""
+          )
+        );
 
-      const fullPrompt = constructPrompt(prompt, selectedFilters);
+        const fullPrompt = constructPrompt(prompt, selectedFilters);
 
-      const result = await model.generateContent(fullPrompt);
-      const generatedText = result.response.text();
-      setResponse(generatedText);
-      if (!isTutorialActive) {
-        onSubmit({ filters: selectedFilters, prompt, response: generatedText });
-      } else {
-        onStepComplete();
+        const result = await model.generateContent(fullPrompt);
+        generatedText = result.response.text();
+        setResponse(generatedText);
       }
+      onSubmit(
+        { filters: selectedFilters, prompt, response: generatedText },
+        isFavourite
+      );
     } catch (error) {
       console.error("Error generating content:", error);
       setResponse("An error occurred while generating content.");
@@ -103,7 +104,7 @@ const PromptPanel = ({
         value={prompt}
         onChange={handlePromptChange}
         onBlur={handlePromptBlur}
-        placeholder="Addition details you would like to add..."
+        placeholder="Additional details you would like to add..."
         style={{
           resize: "none",
           border: "1px solid #424242",
@@ -114,16 +115,25 @@ const PromptPanel = ({
         data-tutorial="prompt"
         disabled={isTutorialActive && tutorialStep !== 2}
       />
-      <Button
-        type="primary"
-        onClick={handleSubmit}
-        style={{ marginTop: "16px" }}
-        loading={isLoading}
-        data-tutorial="generate"
-        disabled={isTutorialActive && tutorialStep !== 3}
-      >
-        Generate Content
-      </Button>
+      <Space style={{ marginTop: "16px" }}>
+        <Button
+          type="primary"
+          onClick={() => handleSubmit(false)}
+          loading={isLoading}
+          data-tutorial="generate"
+          disabled={isTutorialActive && tutorialStep !== 3}
+        >
+          Generate Content
+        </Button>
+        <Button
+          type="primary"
+          onClick={() => handleSubmit(true)}
+          disabled={!(response && !isLoading)}
+          data-tutorial="generated-content"
+        >
+          Save Content to Favourites
+        </Button>
+      </Space>
       {response && (
         <div
           style={{
