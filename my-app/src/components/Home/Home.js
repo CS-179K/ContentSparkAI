@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Row, Col, message } from "antd";
-import axios from "axios";
+import { Row, Col } from "antd";
 import FilterForm from "../Filter/FilterForm";
 import PromptPanel from "../PromptPanel/PromptPanel";
 import Tutorial from "../Tutorial/Tutorial";
@@ -18,43 +17,11 @@ const Home = () => {
     setIsTutorialActive(!tutorialCompleted);
   }, []);
 
-  const handleSaveFilters = async (filters, shouldSave) => {
-    try {
-      setSavedFilters((prevFilters) => ({
-        ...prevFilters,
-        ...filters,
-      }));
-      if (shouldSave) {
-        const response = await axios.post(
-          `${process.env.REACT_APP_API_BASE_URL}/saveFilter`,
-          filters
-        );
-        message.success(response.data.message);
-        if (isTutorialActive) {
-          handleTutorialNext();
-        }
-      }
-    } catch (error) {
-      message.error(error.message);
-    }
-  };
-
-  const handleContentSubmit = async (data, isFavourite) => {
-    try {
-      const url = isFavourite ? "save-favourite-content" : "save-content";
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_BASE_URL}/${url}`,
-        data
-      );
-      if (isFavourite) {
-        message.success(response.data);
-      }
-      if (isTutorialActive) {
-        handleTutorialNext();
-      }
-    } catch (error) {
-      message.error("Failed to save content. Please try again.");
-    }
+  const handleSaveFilters = async (filters) => {
+    setSavedFilters((prevFilters) => ({
+      ...prevFilters,
+      ...filters,
+    }));
   };
 
   const handleTutorialComplete = () => {
@@ -89,7 +56,6 @@ const Home = () => {
         <Col span={12}>
           <PromptPanel
             filters={savedFilters}
-            onSubmit={handleContentSubmit}
             onStepComplete={handleTutorialNext}
             tutorialStep={tutorialStep}
             isTutorialActive={isTutorialActive}

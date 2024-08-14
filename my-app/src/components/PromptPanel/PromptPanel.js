@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Button, Input, Card, Space } from "antd";
+import { Button, Input, Card, Space, message } from "antd";
+import axios from "axios";
 import DynamicResponse from "../DynamicResponse/DynamicResponse";
 
 const { TextArea } = Input;
@@ -10,14 +11,14 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
 const PromptPanel = ({
   filters,
-  onSubmit,
   onStepComplete,
   tutorialStep,
   isTutorialActive,
 }) => {
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const constructPrompt = (userPrompt, selectedFilters) => {
     return `
@@ -58,10 +59,13 @@ const PromptPanel = ({
   };
 
   const handleSubmit = async (isFavourite = false) => {
-    setIsLoading(true);
+    if (isFavourite) {
+      setIsSaving(true);
+    } else {
+      setIsGenerating(true);
+    }
     try {
-      let generatedText = response;
-      let selectedFilters;
+      let generatedText, selectedFilters;
       if (!isFavourite) {
         selectedFilters = Object.fromEntries(
           Object.entries(filters).filter(
@@ -75,15 +79,19 @@ const PromptPanel = ({
         generatedText = result.response.text();
         setResponse(generatedText);
       }
-      onSubmit(
-        { filters: selectedFilters, prompt, response: generatedText },
-        isFavourite
+      const url = isFavourite ? "save-favourite-content" : "save-content";
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/${url}`,
+        { filters: selectedFilters, prompt, response: generatedText }
       );
+      if (isFavourite) {
+        message.success(response.data);
+      }
     } catch (error) {
-      console.error("Error generating content:", error);
-      setResponse("An error occurred while generating content.");
+      message.error(error.message);
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
+      setIsSaving(false);
     }
   };
 
@@ -119,7 +127,7 @@ const PromptPanel = ({
         <Button
           type="primary"
           onClick={() => handleSubmit(false)}
-          loading={isLoading}
+          loading={isGenerating}
           data-tutorial="generate"
           disabled={(isTutorialActive && tutorialStep !== 3) || !prompt}
         >
@@ -128,7 +136,8 @@ const PromptPanel = ({
         <Button
           type="primary"
           onClick={() => handleSubmit(true)}
-          disabled={!(response && !isLoading)}
+          loading={isSaving}
+          disabled={!(response && !isGenerating) || !prompt}
           data-tutorial="mark-favourite"
         >
           Save Content to Favourites

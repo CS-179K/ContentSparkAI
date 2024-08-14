@@ -1,5 +1,6 @@
-import React from "react";
-import { Form, Select, Button, Card, Row, Col } from "antd";
+import React, { useState } from "react";
+import { Form, Select, Button, Card, Row, Col, message } from "antd";
+import axios from "axios";
 
 const { Option } = Select;
 
@@ -11,14 +12,30 @@ const FilterForm = ({
   isTutorialActive,
 }) => {
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
 
-  const handleSave = (values) => {
-    onSave(values, true);
+  const handleSave = async (values) => {
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/saveFilter`,
+        values
+      );
+      onSave(values);
+      message.success(response.data.message);
+      if (isTutorialActive) {
+        onStepComplete();
+      }
+    } catch (error) {
+      message.error(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (changedValues, allValues) => {
     if (!isTutorialActive) {
-      onChange(allValues, false);
+      onChange(allValues);
     } else if (tutorialStep === 0 && changedValues.contentType) {
       onStepComplete();
     } else if (tutorialStep === 1 && changedValues.industry) {
@@ -293,6 +310,7 @@ const FilterForm = ({
             htmlType="submit"
             data-tutorial="save-filters"
             disabled={isTutorialActive && tutorialStep !== 5}
+            loading={loading}
           >
             Save Filters to Favourites
           </Button>
