@@ -8,7 +8,13 @@ const { TextArea } = Input;
 const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
-const PromptPanel = ({ filters, onSubmit }) => {
+const PromptPanel = ({
+  filters,
+  onSubmit,
+  onStepComplete,
+  tutorialStep,
+  isTutorialActive,
+}) => {
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -52,6 +58,8 @@ const PromptPanel = ({ filters, onSubmit }) => {
   };
 
   const handleSubmit = async () => {
+    if (isTutorialActive && tutorialStep !== 3) return;
+
     setIsLoading(true);
     try {
       const selectedFilters = Object.fromEntries(
@@ -65,7 +73,11 @@ const PromptPanel = ({ filters, onSubmit }) => {
       const result = await model.generateContent(fullPrompt);
       const generatedText = result.response.text();
       setResponse(generatedText);
-      onSubmit({ filters: selectedFilters, prompt, response: generatedText });
+      if (!isTutorialActive) {
+        onSubmit({ filters: selectedFilters, prompt, response: generatedText });
+      } else {
+        onStepComplete();
+      }
     } catch (error) {
       console.error("Error generating content:", error);
       setResponse("An error occurred while generating content.");
@@ -74,12 +86,23 @@ const PromptPanel = ({ filters, onSubmit }) => {
     }
   };
 
+  const handlePromptChange = (e) => {
+    setPrompt(e.target.value);
+  };
+
+  const handlePromptBlur = () => {
+    if (isTutorialActive && tutorialStep === 2 && prompt.trim() !== "") {
+      onStepComplete();
+    }
+  };
+
   return (
     <Card title="Content Generator">
       <TextArea
         rows={4}
         value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
+        onChange={handlePromptChange}
+        onBlur={handlePromptBlur}
         placeholder="Addition details you would like to add..."
         style={{
           resize: "none",
@@ -88,12 +111,16 @@ const PromptPanel = ({ filters, onSubmit }) => {
           color: "rgba(255, 255, 255, 0.85)",
           borderRadius: "6px",
         }}
+        data-tutorial="prompt"
+        disabled={isTutorialActive && tutorialStep !== 2}
       />
       <Button
         type="primary"
         onClick={handleSubmit}
         style={{ marginTop: "16px" }}
         loading={isLoading}
+        data-tutorial="generate"
+        disabled={isTutorialActive && tutorialStep !== 3}
       >
         Generate Content
       </Button>
