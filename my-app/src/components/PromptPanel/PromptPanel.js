@@ -21,6 +21,9 @@ const PromptPanel = ({
   const [isSaving, setIsSaving] = useState(false);
 
   const constructPrompt = (userPrompt, selectedFilters) => {
+    const ageRangeString = selectedFilters.ageRange
+      ? `${selectedFilters.ageRange} years old`
+      : "all age groups";
     return `
       You are an expert content creator specializing in ${
         selectedFilters.contentType || "various types of content"
@@ -31,7 +34,7 @@ const PromptPanel = ({
       Context: The content is for the ${
         selectedFilters.industry || "general"
       } industry, 
-               targeting ${selectedFilters.ageRange || "all age groups"}
+               targeting  ${ageRangeString}
                with interests in ${
                  selectedFilters.interests
                    ? selectedFilters.interests.join(", ")
@@ -87,7 +90,7 @@ const PromptPanel = ({
       if (isFavourite) {
         message.success(response.data);
       }
-      if(isTutorialActive) {
+      if (isTutorialActive) {
         onStepComplete();
       }
     } catch (error) {
