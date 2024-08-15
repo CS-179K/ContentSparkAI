@@ -236,7 +236,7 @@ const contentValidationRules = [
 ];
 
 // Save filters endpoint (Protected)
-app.post("/api/save-filter", authenticate, filterValidationRules, async (req, res) => {
+app.post("/api/saveFilter", authenticate, filterValidationRules, async (req, res) => {
   console.log('Received filter data:', JSON.stringify(req.body, null, 2));
   const errors = validationResult(req);
 

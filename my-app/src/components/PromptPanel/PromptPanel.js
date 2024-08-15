@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Button, Input, Card } from "antd";
+import { Button, Input, Card, Space, message } from "antd";
+import axios from "axios";
 import DynamicResponse from "../DynamicResponse/DynamicResponse";
 
 const { TextArea } = Input;
@@ -8,12 +9,21 @@ const { TextArea } = Input;
 const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
-const PromptPanel = ({ filters, onSubmit }) => {
+const PromptPanel = ({
+  filters,
+  onStepComplete,
+  tutorialStep,
+  isTutorialActive,
+}) => {
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const constructPrompt = (userPrompt, selectedFilters) => {
+    const ageRangeString = selectedFilters.ageRange
+      ? `${selectedFilters.ageRange} years old`
+      : "all age groups";
     return `
       You are an expert content creator specializing in ${
         selectedFilters.contentType || "various types of content"
@@ -24,7 +34,7 @@ const PromptPanel = ({ filters, onSubmit }) => {
       Context: The content is for the ${
         selectedFilters.industry || "general"
       } industry, 
-               targeting ${selectedFilters.ageRange || "all age groups"}
+               targeting  ${ageRangeString}
                with interests in ${
                  selectedFilters.interests
                    ? selectedFilters.interests.join(", ")
@@ -51,26 +61,56 @@ const PromptPanel = ({ filters, onSubmit }) => {
     `;
   };
 
-  const handleSubmit = async () => {
-    setIsLoading(true);
+  const handleSubmit = async (isFavourite = false) => {
+    if (isFavourite) {
+      setIsSaving(true);
+    } else {
+      setIsGenerating(true);
+    }
     try {
-      const selectedFilters = Object.fromEntries(
-        Object.entries(filters).filter(
-          ([_, value]) => value !== undefined && value !== ""
-        )
+      let generatedText, selectedFilters;
+      if (!isFavourite) {
+        selectedFilters = Object.fromEntries(
+          Object.entries(filters).filter(
+            ([_, value]) => value !== undefined && value !== ""
+          )
+        );
+
+        const fullPrompt = constructPrompt(prompt, selectedFilters);
+
+        const result = await model.generateContent(fullPrompt);
+        generatedText = result.response.text();
+        setResponse(generatedText);
+      }
+      const url = isFavourite ? "save-favourite-content" : "save-content";
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/${url}`,
+        { filters: selectedFilters, prompt, response: generatedText },
+        {
+          withCredentials: true,
+        }
       );
-
-      const fullPrompt = constructPrompt(prompt, selectedFilters);
-
-      const result = await model.generateContent(fullPrompt);
-      const generatedText = result.response.text();
-      setResponse(generatedText);
-      onSubmit({ filters: selectedFilters, prompt, response: generatedText });
+      if (isFavourite) {
+        message.success(response.data);
+      }
+      if (isTutorialActive) {
+        onStepComplete();
+      }
     } catch (error) {
-      console.error("Error generating content:", error);
-      setResponse("An error occurred while generating content.");
+      message.error(error.message);
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
+      setIsSaving(false);
+    }
+  };
+
+  const handlePromptChange = (e) => {
+    setPrompt(e.target.value);
+  };
+
+  const handlePromptBlur = () => {
+    if (isTutorialActive && tutorialStep === 2 && prompt.trim() !== "") {
+      onStepComplete();
     }
   };
 
@@ -79,8 +119,9 @@ const PromptPanel = ({ filters, onSubmit }) => {
       <TextArea
         rows={4}
         value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        placeholder="Addition details you would like to add..."
+        onChange={handlePromptChange}
+        onBlur={handlePromptBlur}
+        placeholder="Additional details you would like to add..."
         style={{
           resize: "none",
           border: "1px solid #424242",
@@ -88,15 +129,29 @@ const PromptPanel = ({ filters, onSubmit }) => {
           color: "rgba(255, 255, 255, 0.85)",
           borderRadius: "6px",
         }}
+        data-tutorial="prompt"
+        disabled={isTutorialActive && tutorialStep !== 2}
       />
-      <Button
-        type="primary"
-        onClick={handleSubmit}
-        style={{ marginTop: "16px" }}
-        loading={isLoading}
-      >
-        Generate Content
-      </Button>
+      <Space style={{ marginTop: "16px" }}>
+        <Button
+          type="primary"
+          onClick={() => handleSubmit(false)}
+          loading={isGenerating}
+          data-tutorial="generate"
+          disabled={(isTutorialActive && tutorialStep !== 3) || !prompt}
+        >
+          Generate Content
+        </Button>
+        <Button
+          type="primary"
+          onClick={() => handleSubmit(true)}
+          loading={isSaving}
+          disabled={!(response && !isGenerating) || !prompt}
+          data-tutorial="mark-favourite"
+        >
+          Save Content to Favourites
+        </Button>
+      </Space>
       {response && (
         <div
           style={{
@@ -104,6 +159,7 @@ const PromptPanel = ({ filters, onSubmit }) => {
             overflow: "auto",
             marginTop: "16px",
           }}
+          data-tutorial="generated-content"
         >
           <h3>Generated Content:</h3>
           <DynamicResponse content={response} />

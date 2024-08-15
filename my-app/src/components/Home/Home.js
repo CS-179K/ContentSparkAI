@@ -1,89 +1,75 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Row, Col } from "antd";
-import axios from "axios";
 import FilterForm from "../Filter/FilterForm";
 import PromptPanel from "../PromptPanel/PromptPanel";
+import Tutorial from "../Tutorial/Tutorial";
+import AppHeader from "../Header/AppHeader";
 
 const Home = () => {
   const [savedFilters, setSavedFilters] = useState({});
-  const [generatedContent, setGeneratedContent] = useState([]);
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [isTutorialActive, setIsTutorialActive] = useState(false);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const filtersResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/get-filters`, {
-          withCredentials: true,
-        });
-        setSavedFilters(filtersResponse.data);
-
-        const contentResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/get-history`, {
-          withCredentials: true,
-        });
-        setGeneratedContent(contentResponse.data);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      }
-    };
-
-    fetchUserData();
+    const tutorialCompleted = localStorage.getItem("tutorialCompleted");
+    setIsFirstTimeUser(!tutorialCompleted);
+    setIsTutorialActive(!tutorialCompleted);
   }, []);
 
-  const handleSaveFilters = async (filters, shouldSave) => {
-    try {
-      setSavedFilters(prevFilters => ({
-        ...prevFilters,
-        ...filters
-      }));
-      if (shouldSave) {
-        const response = await axios.post(
-          `${process.env.REACT_APP_API_BASE_URL}/save-filter`,
-          filters,
-          {
-            withCredentials: true, // Include cookies in the request
-          }
-        );
-        console.log("Filter saved successfully:", response.data);
-      }
-    } catch (error) {
-      console.error("There was an error saving the data!", error);
-    }
+  const handleSaveFilters = async (filters) => {
+    setSavedFilters((prevFilters) => ({
+      ...prevFilters,
+      ...filters,
+    }));
   };
 
-  const handleSubmit = async (data) => {
-    try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_BASE_URL}/save-content`,
-        data,
-        {
-          withCredentials: true, // Include cookies in the request
-        }
-      );
-      console.log("Data saved successfully:", response.data);
-      setGeneratedContent(prevContent => [...prevContent, response.data]); // Add new content to the list
-    } catch (error) {
-      console.error("Error saving data:", error);
-    }
+  const handleTutorialComplete = () => {
+    setIsFirstTimeUser(false);
+    setIsTutorialActive(false);
+    localStorage.setItem("tutorialCompleted", "true");
+  };
+
+  const handleTutorialNext = () => {
+    setTutorialStep((prevStep) => prevStep + 1);
   };
 
   return (
     <>
-      <Row gutter={16} style={{ padding: "20px", placeItems: "flex-start" }}>
+      <AppHeader isTutorialActive={isTutorialActive} />
+      <Row
+        gutter={16}
+        style={{
+          padding: "20px",
+          placeItems: "flex-start",
+        }}
+      >
         <Col span={12}>
-          <FilterForm onSave={handleSaveFilters} onChange={handleSaveFilters} />
+          <FilterForm
+            onSave={handleSaveFilters}
+            onChange={handleSaveFilters}
+            onStepComplete={handleTutorialNext}
+            tutorialStep={tutorialStep}
+            isTutorialActive={isTutorialActive}
+          />
         </Col>
         <Col span={12}>
-          <PromptPanel filters={savedFilters} onSubmit={handleSubmit} />
-          <div>
-            <h2>Generated Content History</h2>
-            {generatedContent.map((content, index) => (
-              <div key={index}>
-                <h3>{content.prompt}</h3>
-                <p>{content.response}</p>
-              </div>
-            ))}
-          </div>
+          <PromptPanel
+            filters={savedFilters}
+            onStepComplete={handleTutorialNext}
+            tutorialStep={tutorialStep}
+            isTutorialActive={isTutorialActive}
+          />
         </Col>
       </Row>
+      {isTutorialActive && (
+        <Tutorial
+          isFirstTimeUser={isFirstTimeUser}
+          onComplete={handleTutorialComplete}
+          onNext={handleTutorialNext}
+          currentStep={tutorialStep}
+        />
+      )}
     </>
   );
 };
