@@ -7,7 +7,9 @@ const History = () => {
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    axios.get(`${process.env.REACT_APP_API_BASE_URL}/get-content`) // Adjust the endpoint if needed
+    axios.get(`${process.env.REACT_APP_API_BASE_URL}/get-history`, {
+      withCredentials: true, // Include cookies in the request
+    })
       .then(response => {
         console.log(response.data); // Log the fetched data to ensure it's correct
         setHistory(response.data);
