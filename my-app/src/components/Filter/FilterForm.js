@@ -309,7 +309,6 @@ const FilterForm = ({
             type="primary"
             htmlType="submit"
             data-tutorial="save-filters"
-            disabled={isTutorialActive && tutorialStep !== 5}
             loading={loading}
           >
             Save Filters to Favourites
