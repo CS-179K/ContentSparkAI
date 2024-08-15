@@ -13,22 +13,28 @@ const Login = () => {
     try {
       const decoded = jwtDecode(credentialResponse?.credential);
       console.log("Google Login Success:", decoded);
-      const expirationTime = 3600000;
-      await fetch("http://localhost:3000/login", {
+      const expirationTime = 3600000; // 1 hour
+
+      const response = await fetch("http://localhost:5005/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        credentials: "include", // Include cookies in the request
         body: JSON.stringify({
           token: credentialResponse?.credential,
           expirationTime,
         }),
       });
-      login(decoded, expirationTime);
-      navigate("/home");
+
+      if (response.ok) {
+        login(decoded, expirationTime); // Store user details in context or state
+        navigate("/home");
+      } else {
+        throw new Error("Failed to login");
+      }
     } catch (error) {
-      console.error("Error decoding JWT:", error);
+      console.error("Error during login:", error);
       handleGoogleFailure();
     }
   };
