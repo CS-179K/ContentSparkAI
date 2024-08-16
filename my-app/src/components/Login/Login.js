@@ -1,7 +1,7 @@
 import React from "react";
+import { message } from "antd";
 import { GoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 import { useAuth } from "../Context/AuthContext";
 import logo from "../../assets/logo.jpeg";
 
@@ -11,36 +11,15 @@ const Login = () => {
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const decoded = jwtDecode(credentialResponse?.credential);
-      console.log("Google Login Success:", decoded);
-      const expirationTime = 3600000; // 1 hour
-
-      const response = await fetch("http://localhost:5005/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // Include cookies in the request
-        body: JSON.stringify({
-          token: credentialResponse?.credential,
-          expirationTime,
-        }),
-      });
-
-      if (response.ok) {
-        login(decoded, expirationTime); // Store user details in context or state
-        navigate("/home");
-      } else {
-        throw new Error("Failed to login");
-      }
+      await login(credentialResponse.credential);
+      navigate("/home");
     } catch (error) {
-      console.error("Error during login:", error);
-      handleGoogleFailure();
+      handleGoogleFailure(error);
     }
   };
 
   const handleGoogleFailure = (error) => {
-    console.error("Google Login Failed:", error);
+    message.error(error.response?.data?.message ?? "Google Login Failed");
     logout();
   };
 

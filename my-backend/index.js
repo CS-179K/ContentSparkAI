@@ -89,7 +89,8 @@ mongoose.connect(process.env.MONGO_URI)
 // Define User Schema and Model
 const userSchema = new mongoose.Schema({
   googleId: { type: String, unique: true }, // Unique Google ID to identify the user
-  token: String, // JWT Token for session management
+  email: String,
+  name: String,
   createdAt: { type: Date, default: Date.now }, // Timestamp for when the user was created
   lastLogin: { type: Date, default: Date.now }, // Last login timestamp
 });
@@ -118,7 +119,6 @@ const contentSchema = new mongoose.Schema({
 });
 
 const GeneratedContent = mongoose.model("GeneratedContent", contentSchema);
-
 // Define Filter Schema and Model
 const filterSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Reference to the user
@@ -138,11 +138,21 @@ const filterSchema = new mongoose.Schema({
 const Filter = mongoose.model("Filter", filterSchema);
 
 // Middleware to authenticate token
+const generateAccessToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "15m" });
+};
+
+const generateRefreshToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: "7d",
+  });
+};
+
 const authenticate = async (req, res, next) => {
-  const token = req.cookies.sessionToken;
+  const token = req.cookies.accessToken;
 
   if (!token) {
-    return res.status(401).json({ message: 'Unauthorized' });
+    return res.status(401).json({ message: 'Access token not found' });
   }
 
   try {
@@ -152,47 +162,91 @@ const authenticate = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Authentication error:", error);
-    res.status(403).json({ message: 'Forbidden' });
+    res.status(401).json({ message: 'Invalid access token' });
   }
 };
 
 // Login Route
-app.post("/login", async (req, res) => {
-  const { token, expirationTime } = req.body;
+app.post("/api/login", async (req, res) => {
+  const { token } = req.body;
 
   try {
     const decoded = jwt.decode(token);
-    const googleId = decoded.sub;
+    const { sub: googleId, email, name } = decoded;
 
     // Find or create the user in the database
     let user = await User.findOne({ googleId });
     if (!user) {
-      user = new User({ googleId });
+      user = new User({ googleId, email, name });
       await user.save();
     }
 
-    // Generate a new server-side token with the user's MongoDB ObjectId
-    const serverToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: expirationTime / 1000, // JWT expects seconds, not milliseconds
-    });
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
 
-    // Update the user's token and last login time
-    user.token = serverToken;
-    user.lastLogin = Date.now();
-    await user.save();
-
-    // Set cookie
-    res.cookie('sessionToken', serverToken, {
+    res.cookie("accessToken", accessToken, {
       httpOnly: true, // Cookie is not accessible via JavaScript
-      maxAge: expirationTime,
       secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-      sameSite: 'Strict',
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000, // 15 minutes
     });
 
-    res.status(200).json({ message: 'Login successful' });
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true, // Cookie is not accessible via JavaScript
+      secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    res.status(200).json({ message: 'Login successful' , user: { id: user._id, email: user.email, name: user.name },});
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: 'Internal server error' });
+  }
+});
+app.post("/api/logout", (req, res) => {
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+  res.json({ message: "Logged out successfully" });
+});
+
+app.post("/api/refresh", async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(401).json({ message: "Refresh Token Not Found" });
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const newAccessToken = generateAccessToken(decoded.userId);
+
+    res.cookie("accessToken", newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    res.json({ message: "Token refreshed successfully" });
+  } catch (error) {
+    console.error("Token refresh error:", error);
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+    res.status(401).json({ message: "Invalid Refresh Token" });
+  }
+});
+
+app.get("/api/check", authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select("-googleId");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({ isAuthenticated: true, user });
+  } catch (error) {
+    console.error("Auth check error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -238,54 +292,53 @@ const contentValidationRules = [
 // Save filters endpoint (Protected)
 app.post("/api/saveFilter", authenticate, filterValidationRules, async (req, res) => {
   console.log('Received filter data:', JSON.stringify(req.body, null, 2));
-  const errors = validationResult(req);
+    const errors = validationResult(req);
 
-  if (!errors.isEmpty()) {
-    console.log('Validation errors:', errors.array());
-    return res.status(400).json({ errors: errors.array() });
-  }
+    if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-  try {
-    const filterData = new Filter({ ...req.body, userId: req.userId });
-    console.log('Filter data after validation:', JSON.stringify(filterData, null, 2));
-    await filterData.save();
-    res.status(201).send({ message: "Filter saved successfully!" });
-  } catch (error) {
-    console.error('Error saving filter:', error);
+    try {
+      const filterData = new Filter({ ...req.body, userId: req.userId });
+      console.log('Filter data after validation:', JSON.stringify(filterData, null, 2));
+      await filterData.save();
+      res.status(201).send({ message: "Filter saved successfully!" });
+    } catch (error) {
+      console.error('Error saving filter:', error);
     res.status(500).send({ error: "Failed to save filter data" });
-  }
-});
-
-// Save generated content endpoint (Protected)
+    }
+  });
+  // Save generated content endpoint (Protected)
 app.post("/api/save-content", authenticate, contentValidationRules, async (req, res) => {
   console.log('Received content data:', JSON.stringify(req.body, null, 2));
-  const errors = validationResult(req);
+    const errors = validationResult(req);
 
-  if (!errors.isEmpty()) {
-    console.log('Validation errors:', errors.array());
-    return res.status(400).json({ errors: errors.array() });
-  }
+    if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-  try {
-    const { filters, prompt, response } = req.body;
-
+    try {
+      const { filters, prompt, response } = req.body;
+      
     // Create a new document using the GeneratedContent model
-    const newContent = new GeneratedContent({
-      userId: req.userId, // This is now the MongoDB ObjectId
-      filters,
-      prompt,
-      response,
-    });
-    console.log('Content data after validation:', JSON.stringify(newContent, null, 2));
-    // Save the document to the database
-    await newContent.save();
+      const newContent = new GeneratedContent({
+        userId: req.userId, // This is now the MongoDB ObjectId
+        filters,
+        prompt,
+        response,
+      });
+      console.log('Content data after validation:', JSON.stringify(newContent, null, 2));
+      // Save the document to the database
+      await newContent.save();
 
-    res.status(201).send(newContent); // Return the newly created content
-  } catch (error) {
-    console.error('Error saving content:', error);
+      res.status(201).send(newContent); // Return the newly created content
+    } catch (error) {
+      console.error('Error saving content:', error);
     res.status(500).send({ error: "Failed to save content" });
-  }
-});
+    }
+  });
 
 // Fetch user history (Protected)
 app.get("/api/get-history", authenticate, async (req, res) => {

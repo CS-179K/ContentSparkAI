@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { FixedSizeList as List } from "react-window";
+import { useAuth } from "../Context/AuthContext";
 import DynamicResponse from "../DynamicResponse/DynamicResponse";
 import AppHeader from "../Header/AppHeader";
 
 const History = () => {
   const [history, setHistory] = useState([]);
+  const { api } = useAuth();
 
   useEffect(() => {
-    axios.get(`${process.env.REACT_APP_API_BASE_URL}/get-history`, {
-      withCredentials: true, // Include cookies in the request
-    })
-      .then(response => {
+    api
+      .get("/get-history")
+      .then((response) => {
         console.log(response.data); // Log the fetched data to ensure it's correct
         setHistory(response.data);
       })
