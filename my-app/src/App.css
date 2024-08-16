@@ -20,33 +20,15 @@ body {
   left: 9px;
 }
 /*History*/
-.hstry-container .container {
-  width: 100%;
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 20px;
+.hstry-container .ant-input {
+  border: 1px solid #424242 !important;
+  background: #141414 !important;
+  color: #ffffff !important;
+  border-radius: 6px 0 0 6px !important;
 }
-.hstry-container .flex {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 2px solid white;
-  color: white;
-  padding: 10px 0;
+.hstry-container .ant-input-search>.ant-input-group>.ant-input-group-addon:last-child .ant-input-search-button {
+  border-radius: 0 6px 6px 0 !important;
+  background: #141414 !important;
+  color: #ffffff !important;
+  border: 1px solid #424242 !important;
 }
-.hstry-container .bold {
-  font-weight: bold;
-}
-.hstry-container .history-list .row {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  padding: 10px;
-  border-bottom: 1px solid #333;
-  color: white;
-}
-.hstry-container .history-list .row > div {
-  flex: 1;
-  padding: 10px;
-}
-

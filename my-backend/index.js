@@ -467,6 +467,36 @@ app.post("/api/set-favorite", authenticate, async (req, res) => {
   }
 });
 
+app.delete("/api/delete-content/:id", async (req, res) => {
+  try {
+    const contentId = req.params.id;
+    console.log("Attempting to delete content with ID:", contentId); // Add this log
+    const existingContent = await GeneratedContent.findById({
+      _id: contentId,
+      userId: req.userId,
+    });
+    if (!existingContent) {
+      console.log("Content not found in database"); // Add this log
+      return res.status(404).json({ error: "Content not found" });
+    }
+
+    const deletedContent = await GeneratedContent.findByIdAndDelete(contentId);
+
+    if (deletedContent) {
+      console.log("Content deleted successfully:", deletedContent); // Add this log
+      res.status(200).json({ message: "Content deleted successfully" });
+    } else {
+      console.log("Failed to delete content"); // Add this log
+      res.status(500).json({ error: "Failed to delete content" });
+    }
+  } catch (error) {
+    console.error("Error deleting content:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to delete content", details: error.message });
+  }
+});
+
 // Custom Error Handling Middleware
 app.use((err, req, res, next) => {
   if (process.env.NODE_ENV === "production" && !req.secure) {

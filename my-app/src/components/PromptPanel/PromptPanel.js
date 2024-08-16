@@ -176,7 +176,7 @@ const PromptPanel = ({
       const result = await api.post("/set-favorite", {
         contentId: lastGeneratedContentId,
       });
-      message.success(result.message);
+      message.success(result.data.message);
       fetchPreviousContent();
     } catch (error) {
       message.error(
