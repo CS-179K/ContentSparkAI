@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Form, Select, Button, Card, Row, Col, message } from "antd";
-import axios from "axios";
+import { useAuth } from "../Context/AuthContext";
 
 const { Option } = Select;
 
@@ -13,14 +13,12 @@ const FilterForm = ({
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const { api } = useAuth();
 
   const handleSave = async (values) => {
     setLoading(true);
     try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_BASE_URL}/saveFilter`,
-        values
-      );
+      const response = await api.post("/saveFilter", values);
       onSave(values);
       message.success(response.data.message);
       if (isTutorialActive) {

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Button, Input, Card, Space, message } from "antd";
-import axios from "axios";
+import { useAuth } from "../Context/AuthContext";
 import DynamicResponse from "../DynamicResponse/DynamicResponse";
 
 const { TextArea } = Input;
@@ -19,6 +19,7 @@ const PromptPanel = ({
   const [response, setResponse] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const { api } = useAuth();
 
   const constructPrompt = (userPrompt, selectedFilters) => {
     const ageRangeString = selectedFilters.ageRange
@@ -83,10 +84,11 @@ const PromptPanel = ({
         setResponse(generatedText);
       }
       const url = isFavourite ? "save-favourite-content" : "save-content";
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_BASE_URL}/${url}`,
-        { filters: selectedFilters, prompt, response: generatedText }
-      );
+      const response = await api.post(`/${url}`, {
+        filters: selectedFilters,
+        prompt,
+        response: generatedText,
+      });
       if (isFavourite) {
         message.success(response.data);
       }
