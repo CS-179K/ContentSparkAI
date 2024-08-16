@@ -1,215 +1,249 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { FixedSizeList as List } from 'react-window';
-import DynamicResponse from '../DynamicResponse/DynamicResponse';
-import './Modal.css'; // Import the CSS for the modal (if using external styles)
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  Card,
+  Typography,
+  Button,
+  Modal,
+  Table,
+  Space,
+  Input,
+  Select,
+  Tag,
+  message,
+} from "antd";
+import { DeleteOutlined, StarOutlined } from "@ant-design/icons";
+import { FixedSizeList as List } from "react-window";
+import DynamicResponse from "../DynamicResponse/DynamicResponse";
+import { useAuth } from "../Context/AuthContext";
+import AppHeader from "../Header/AppHeader";
+
+const { Paragraph, Text, Title } = Typography;
+const { Search } = Input;
+const { Option } = Select;
 
 const History = () => {
   const [history, setHistory] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortOrder, setSortOrder] = useState("newest");
+  const { api } = useAuth();
 
-  useEffect(() => {
-    axios.get(`${process.env.REACT_APP_API_BASE_URL}/get-content`) // Adjust the endpoint if needed
-      .then(response => {
-        console.log(response.data); // Log the fetched data to ensure it's correct
-        setHistory(response.data);
-      })
-      .catch(error => console.error('Error fetching data:', error));
+  const fetchHistory = useCallback(async () => {
+    try {
+      const response = await api.get("/get-history");
+      setHistory(response.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
   }, []);
 
-  const formatFilters = (filters) => {
-    return Object.entries(filters)
-      .filter(([key, value]) => value && typeof value === 'string')
-      .map(([key, value]) => (
-        <div key={key} style={{ whiteSpace: 'pre-wrap' }}>{`${key}: ${value}`}</div>
-      ));
-  };
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
 
-  const formatPrompt = (prompt) => {
-    return prompt.split('\n').map((item, index) => (
-      <li key={index} style={{ listStyleType: 'disc', marginBottom: '5px' }}>{item}</li>
-    ));
-  };
-
-  const handleRowClick = (index) => {
-    setModalContent(history[index]);
-    setIsModalOpen(true);
-  };
-
-  const Row = ({ index, style }) => (
-    <div
-      style={{ ...style, display: 'flex', borderBottom: '1px solid white', color: 'white', cursor: 'pointer' }}
-      onClick={() => handleRowClick(index)}
-    >
-      <div style={{ width: '20%', padding: '10px' }}>
-        {formatFilters(history[index].filters)}
-      </div>
-      <div style={{ width: '40%', padding: '10px' }}>
-        <ul style={{ paddingLeft: '20px', margin: 0 }}>{formatPrompt(history[index].prompt)}</ul>
-      </div>
-      <div style={{ width: '30%', padding: '10px', overflowX: 'auto' }}>
-        <DynamicResponse content={history[index].response} />
-      </div>
-      <div style={{ width: '10%', padding: '10px', display: 'flex', justifyContent: 'space-between' }}>
-        <button className="delete-btn" onClick={(e) => handleDelete(e, index)}>Delete</button>
-        <button className="favorite-btn" onClick={(e) => handleFavorite(e, index)}>Save to Favorite</button>
-      </div>
-    </div>
-  );
-  
-  const handleDelete = async (e, index) => {
-    e.stopPropagation();
+  const handleDelete = async (id) => {
     try {
-      const itemToDelete = history[index];
-      const itemId = itemToDelete?._id;
-      if (!itemId) {
-        console.error('No valid ID found for item:', itemToDelete);
-        return;
-      }
-      
-      // Remove the duplicate '/api' if it exists in your base URL
-      const baseUrl = process.env.REACT_APP_API_BASE_URL.endsWith('/api') 
-        ? process.env.REACT_APP_API_BASE_URL.slice(0, -4) 
-        : process.env.REACT_APP_API_BASE_URL;
-      
-      const response = await axios.delete(`${baseUrl}/api/delete-content/${itemId}`);
-      
-      if (response.status === 200) {
-        const updatedHistory = history.filter((item) => item._id !== itemId);
-        setHistory(updatedHistory);
-        console.log('Item deleted successfully:', response.data);
-      } else {
-        console.error('Failed to delete item:', response.data);
-      }
+      const response = await api.delete(`/delete-content/${id}`);
+      message.success(response.data.message);
+      fetchHistory();
     } catch (error) {
-      console.error('Error deleting item:', error.response?.data || error.message);
+      console.error("Error deleting item:", error);
+      message.error(error.response?.data?.message ?? "Deletion failed");
     }
   };
-  
-  
-  const handleFavorite = (e, index) => {
 
-    // Logic to mark the item as favorite
-  
+  const handleFavorite = async (id) => {
+    // Implement favorite functionality
   };
-  
 
+  const showModal = (item) => {
+    setSelectedItem(item);
+    setIsModalVisible(true);
+  };
 
-const CustomModal = ({ content, onClose }) => {
-  if (!content) return null;
+  const handleModalClose = () => {
+    setIsModalVisible(false);
+    setSelectedItem(null);
+  };
 
-  const { filters, prompt, response } = content;
+  const columns = [
+    {
+      title: "Filter Name",
+      dataIndex: "key",
+      key: "key",
+      render: (text) => <Text strong>{text}</Text>,
+    },
+    {
+      title: "Filter Value",
+      dataIndex: "value",
+      key: "value",
+      render: (value) => {
+        if (Array.isArray(value)) {
+          return (
+            <Space wrap>
+              {value.map((item, index) => (
+                <Tag key={index} color="blue">
+                  {item}
+                </Tag>
+              ))}
+            </Space>
+          );
+        }
+        return value;
+      },
+    },
+  ];
 
-  const formatFilters = (filters) => {
+  const formatFilterValue = (value) => {
+    if (Array.isArray(value)) {
+      return value;
+    }
+    return String(value);
+  };
+
+  const filteredAndSortedHistory = history
+    .filter(
+      (item) =>
+        item.prompt.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.response.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortOrder === "newest") {
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      } else {
+        return new Date(a.createdAt) - new Date(b.createdAt);
+      }
+    });
+
+  const Row = ({ index, style }) => {
+    const item = filteredAndSortedHistory[index];
     return (
-      <table className="filters-table">
-        <thead>
-          <tr>
-            <th>Key</th>
-            <th>Value</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Object.entries(filters)
-            .filter(([key, value]) => value && typeof value === 'string')
-            .map(([key, value]) => (
-              <tr key={key}>
-                <td>{key}</td>
-                <td>{value}</td>
-              </tr>
-            ))}
-        </tbody>
-      </table>
+      <div
+        style={{ ...style, borderBottom: "1px solid #303030", padding: "16px" }}
+      >
+        <Card
+          hoverable
+          onClick={() => showModal(item)}
+          style={{ width: "100%", cursor: "pointer" }}
+        >
+          <Paragraph ellipsis={{ rows: 1, expandable: false }}>
+            <Title level={2}>{item.title}</Title>
+          </Paragraph>
+          <Paragraph ellipsis={{ rows: 2, expandable: false }}>
+            <Text strong>Response:</Text> {item.response}
+          </Paragraph>
+          <Space>
+            <Button
+              type="primary"
+              icon={<StarOutlined />}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleFavorite(item._id);
+              }}
+            >
+              Save to Favorite
+            </Button>
+            <Button
+              type="primary"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(item._id);
+              }}
+            >
+              Delete
+            </Button>
+          </Space>
+        </Card>
+      </div>
     );
   };
 
-  const formatPrompt = (prompt) => {
-    return prompt.split('\n').map((item, index) => (
-      <li key={index} style={{ listStyleType: 'disc', marginBottom: '5px' }}>{item}</li>
-    ));
-  };
-
-  const handleDeleteFromModal = async () => {
-    try {
-      const itemId = content?._id;
-      if (!itemId) {
-        console.error('No valid ID found for item:', content);
-        return;
-      }
-  
-      const response = await axios.delete(`${process.env.REACT_APP_API_BASE_URL}/delete-content/${itemId}`);
-  
-      if (response.status === 200) {
-        const updatedHistory = history.filter(item => item._id !== itemId);
-        setHistory(updatedHistory);
-        onClose(); // Close the modal after deletion
-        console.log('Item deleted successfully:', response.data);
-      } else {
-        console.error('Failed to delete item:', response.data);
-      }
-    } catch (error) {
-      console.error('Error deleting item:', error);
-    }
-  };
-  
-  
-
-  const handleFavoriteFromModal = () => {
-    // Logic to save the item to favorites, similar to the Row's handleFavorite function
-
-  };
-
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h2>Details</h2>
-          <button onClick={onClose} className="modal-close-button">Close</button>
-        </div>
-        <div className="modal-body">
-          <div>
-            <strong>Filters:</strong>
-            {formatFilters(filters)}
-          </div>
-          <div>
-            <strong>Prompt:</strong>
-            <ul style={{ paddingLeft: '20px', margin: 0 }}>{formatPrompt(prompt)}</ul>
-          </div>
-          <div>
-            <strong>Response:</strong>
-            <div className="modal-response">
-              <DynamicResponse content={response} />
-            </div>
-          </div>
-        </div>
-        <div className="modal-footer">
-          <button className="delete-btn" onClick={handleDeleteFromModal}>Delete</button>
-          <button className="favorite-btn" onClick={handleFavoriteFromModal}>Save to Favorite</button>
-        </div>
+    <>
+      <AppHeader />
+      <div className="hstry-container" style={{ padding: "24px" }}>
+        <Space style={{ marginBottom: "16px" }}>
+          <Search
+            placeholder="Search in history"
+            onSearch={setSearchTerm}
+            style={{ width: 200 }}
+          />
+          <Select
+            defaultValue="newest"
+            style={{ width: 120 }}
+            onChange={setSortOrder}
+          >
+            <Option value="newest">Newest</Option>
+            <Option value="oldest">Oldest</Option>
+          </Select>
+        </Space>
+        <List
+          height={window.innerHeight - 200}
+          itemCount={filteredAndSortedHistory.length}
+          itemSize={264}
+          width="100%"
+        >
+          {Row}
+        </List>
+        <Modal
+          visible={isModalVisible}
+          onCancel={handleModalClose}
+          footer={
+            selectedItem && (
+              <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                <Button
+                  type="primary"
+                  icon={<StarOutlined />}
+                  onClick={() => handleFavorite(selectedItem._id)}
+                  style={{ marginRight: 8 }}
+                >
+                  Save to Favorite
+                </Button>
+                <Button
+                  type="primary"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => {
+                    handleDelete(selectedItem._id);
+                    handleModalClose();
+                  }}
+                >
+                  Delete
+                </Button>
+              </div>
+            )
+          }
+          width={800}
+          bodyStyle={{ maxHeight: "calc(60vh - 55px)", overflow: "auto" }}
+        >
+          {selectedItem && (
+            <>
+              <Title level={2}>{selectedItem.title}</Title>
+              <Table
+                columns={columns}
+                dataSource={Object.entries(selectedItem.filters)
+                  .filter(([_, value]) => value && value.length > 0)
+                  .map(([key, value]) => ({
+                    key,
+                    value: formatFilterValue(value),
+                  }))}
+                pagination={false}
+                size="small"
+              />
+              <Paragraph style={{ marginTop: "24px" }}>
+                <Title level={3}>Prompt:</Title>
+                <DynamicResponse content={selectedItem.prompt} />
+              </Paragraph>
+              <Title level={3}>Response:</Title>
+              <DynamicResponse content={selectedItem.response} />
+            </>
+          )}
+        </Modal>
       </div>
-    </div>
-  );
-};
-
-  return (
-    <div className='hstry-container'>
-      <div style={{ display: 'flex', borderBottom: '2px solid white', color: 'white', fontWeight: 'bold' }}>
-        <div style={{ width: '25%', padding: '10px' }}>Filters</div>
-        <div style={{ width: '45%', padding: '10px' }}>Prompt</div>
-        <div style={{ width: '30%', padding: '10px' }}>Response</div>
-      </div>
-      <List
-        height={400} // Adjust the height as needed
-        itemCount={history.length}
-        itemSize={120} // Adjusted height of each row to accommodate content
-        width={'100%'}
-      >
-        {Row}
-      </List>
-
-      {isModalOpen && <CustomModal content={modalContent} onClose={() => setIsModalOpen(false)} />}
-    </div>
+    </>
   );
 };
 

@@ -1,9 +1,12 @@
+import AppHeader from "../Header/AppHeader";
+
 const Favourites = () => {
-    return (
-        <div>
-            Favourites
-        </div>
-    );
+  return (
+    <>
+      <AppHeader />
+      <div>Favourites</div>
+    </>
+  );
 };
 
 export default Favourites;
