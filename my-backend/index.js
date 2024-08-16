@@ -13,6 +13,7 @@ const { body, validationResult } = require("express-validator");
 const app = express();
 const port = process.env.PORT || 5005;
 
+
 app.disable("x-powered-by");
 
 // Middleware
@@ -135,9 +136,11 @@ const filterSchema = new mongoose.Schema({
   contentGoal: String,
   maxContentLength: String,
   language: String,
+  isFavourite: { type: Boolean, default: true },
 });
 
 const Filter = mongoose.model("Filter", filterSchema);
+
 
 // Middleware to authenticate token
 const generateAccessToken = (userId) => {
@@ -497,6 +500,48 @@ app.delete("/api/delete-content/:id", async (req, res) => {
   }
 });
 
+// Route to fetch all filters for the authenticated user
+app.get('/api/get-filters', authenticate, async (req, res) => {
+  try {
+    // Fetch filters based on the user ID
+    const filters = await Filter.find({ userId: req.userId, isFavourite: true});
+
+      res.status(200).json(filters);
+  } catch (error) {
+      res.status(500).json({ message: 'Error fetching filters', error }); 
+  }
+});
+
+// Route to unfavorite a filter
+app.post('/api/unfavorite-filter/:id', async (req, res) => {
+  try {
+      const filter = await Filter.findById(req.params.id);
+      if (filter) {
+          filter.isFavourite = false;
+          await filter.save();
+          res.status(200).json({ message: 'Filter unfavorited successfully' });
+      } else {
+          res.status(404).json({ message: 'Filter not found' });
+      }
+  } catch (error) {
+      res.status(500).json({ message: 'Error unfavoriting filter', error });
+  }
+});
+
+// Route to delete a filter
+app.delete('/api/delete-filter/:id', async (req, res) => {
+  try {
+      const filter = await Filter.findByIdAndDelete(req.params.id);
+      if (filter) {
+          res.status(200).json({ message: 'Filter deleted successfully' });
+      } else {
+          res.status(404).json({ message: 'Filter not found' });
+      }
+  } catch (error) {
+      res.status(500).json({ message: 'Error deleting filter', error });
+  }
+});
+
 // Custom Error Handling Middleware
 app.use((err, req, res, next) => {
   if (process.env.NODE_ENV === "production" && !req.secure) {
@@ -506,6 +551,7 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send({ error: "Something went wrong!" });
 });
+
 
 // Start the server
 app.listen(port, () => {
