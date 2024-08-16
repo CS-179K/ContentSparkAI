@@ -18,14 +18,14 @@ const FilterForm = ({
   const handleSave = async (values) => {
     setLoading(true);
     try {
-      const response = await api.post("/saveFilter", values);
+      const response = await api.post("/save-filter", values);
       onSave(values);
       message.success(response.data.message);
       if (isTutorialActive) {
         onStepComplete();
       }
     } catch (error) {
-      message.error(error.message);
+      message.error(error.response?.data?.message ?? "An error occurred");
     } finally {
       setLoading(false);
     }
