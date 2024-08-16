@@ -1,17 +1,44 @@
-import React from "react";
-import { Form, Select, Button, Card, Row, Col } from "antd";
+import React, { useState } from "react";
+import { Form, Select, Button, Card, Row, Col, message } from "antd";
+import { useAuth } from "../Context/AuthContext";
 
 const { Option } = Select;
 
-const FilterForm = ({ onSave }) => {
+const FilterForm = ({
+  onSave,
+  onChange,
+  onStepComplete,
+  tutorialStep,
+  isTutorialActive,
+}) => {
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const { api } = useAuth();
 
-  const handleSave = (values) => {
-    onSave(values, true);
+  const handleSave = async (values) => {
+    setLoading(true);
+    try {
+      const response = await api.post("/saveFilter", values);
+      onSave(values);
+      message.success(response.data.message);
+      if (isTutorialActive) {
+        onStepComplete();
+      }
+    } catch (error) {
+      message.error(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleChange = (values) => {
-    onSave(values, false);
+  const handleChange = (changedValues, allValues) => {
+    if (!isTutorialActive) {
+      onChange(allValues);
+    } else if (tutorialStep === 0 && changedValues.contentType) {
+      onStepComplete();
+    } else if (tutorialStep === 1 && changedValues.industry) {
+      onStepComplete();
+    }
   };
 
   return (
@@ -19,11 +46,30 @@ const FilterForm = ({ onSave }) => {
       title="Content Generation Filters"
       style={{ maxHeight: "calc(100vh - 104px)", overflow: "auto" }}
     >
-      <Form form={form} onFinish={handleSave} onValuesChange={handleChange} layout="vertical">
+      <Form
+        form={form}
+        onFinish={handleSave}
+        onValuesChange={handleChange}
+        layout="vertical"
+      >
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item name="contentType" label="Type of Content" required>
-              <Select placeholder="Select content type" showSearch>
+            <Form.Item
+              name="contentType"
+              label="Type of Content"
+              rules={[
+                {
+                  required: true,
+                  message: "Please input!",
+                },
+              ]}
+            >
+              <Select
+                placeholder="Select content type"
+                showSearch
+                data-tutorial="content-type"
+                disabled={isTutorialActive && tutorialStep !== 0}
+              >
                 <Option value="blog Posts">Blog Posts</Option>
                 <Option value="ad Campaigns">Ad Campaigns</Option>
                 <Option value="social Media Posts">Social Media Posts</Option>
@@ -40,8 +86,22 @@ const FilterForm = ({ onSave }) => {
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="industry" label="Industry/Category" required>
-              <Select placeholder="Select industry" showSearch>
+            <Form.Item
+              name="industry"
+              label="Industry/Category"
+              rules={[
+                {
+                  required: true,
+                  message: "Please input!",
+                },
+              ]}
+            >
+              <Select
+                placeholder="Select industry"
+                showSearch
+                data-tutorial="industry"
+                disabled={isTutorialActive && tutorialStep !== 1}
+              >
                 <Option value="technology">Technology</Option>
                 <Option value="fashion">Fashion</Option>
                 <Option value="foodBeverage">Food & Beverage</Option>
@@ -184,7 +244,11 @@ const FilterForm = ({ onSave }) => {
               name="maxContentLength"
               label="Content Length (max words)"
             >
-              <Select placeholder="Select Max Content Length" showSearch allowClear>
+              <Select
+                placeholder="Select Max Content Length"
+                showSearch
+                allowClear
+              >
                 <Option value="short">Short</Option>
                 <Option value="medium">Medium</Option>
                 <Option value="long">Long</Option>
@@ -239,8 +303,13 @@ const FilterForm = ({ onSave }) => {
         </Form.Item>
 
         <Form.Item>
-          <Button type="primary" htmlType="submit">
-            Save Filters
+          <Button
+            type="primary"
+            htmlType="submit"
+            data-tutorial="save-filters"
+            loading={loading}
+          >
+            Save Filters to Favourites
           </Button>
         </Form.Item>
       </Form>

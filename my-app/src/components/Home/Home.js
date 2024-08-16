@@ -1,46 +1,75 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Row, Col } from "antd";
-import axios from "axios";
 import FilterForm from "../Filter/FilterForm";
 import PromptPanel from "../PromptPanel/PromptPanel";
+import Tutorial from "../Tutorial/Tutorial";
+import AppHeader from "../Header/AppHeader";
 
 const Home = () => {
   const [savedFilters, setSavedFilters] = useState({});
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [isTutorialActive, setIsTutorialActive] = useState(false);
 
-  const handleSaveFilters = async (filters, shouldSave) => {
-    try {
-      setSavedFilters(prevFilters => ({
-        ...prevFilters,
-        ...filters
-      }));
-      if(shouldSave) {
-        const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/saveFilter`, filters);
-        console.log("Filter saved successfully:", response.data);
-      }
-    } catch (error) {
-      console.error("There was an error saving the data!", error);
-    }
+  useEffect(() => {
+    const tutorialCompleted = localStorage.getItem("tutorialCompleted");
+    setIsFirstTimeUser(!tutorialCompleted);
+    setIsTutorialActive(!tutorialCompleted);
+  }, []);
+
+  const handleSaveFilters = async (filters) => {
+    setSavedFilters((prevFilters) => ({
+      ...prevFilters,
+      ...filters,
+    }));
   };
 
-  const handleSubmit = async (data) => {
-    try {
-      const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/save-content`, data);
-      console.log("Data saved successfully:", response.data);
-    } catch (error) {
-      console.error("Error saving data:", error);
-    }
+  const handleTutorialComplete = () => {
+    setIsFirstTimeUser(false);
+    setIsTutorialActive(false);
+    localStorage.setItem("tutorialCompleted", "true");
+  };
+
+  const handleTutorialNext = () => {
+    setTutorialStep((prevStep) => prevStep + 1);
   };
 
   return (
     <>
-      <Row gutter={16} style={{ padding: "20px", placeItems: "flex-start" }}>
+      <AppHeader isTutorialActive={isTutorialActive} />
+      <Row
+        gutter={16}
+        style={{
+          padding: "20px",
+          placeItems: "flex-start",
+        }}
+      >
         <Col span={12}>
-          <FilterForm onSave={handleSaveFilters} onChange={handleSaveFilters} />
+          <FilterForm
+            onSave={handleSaveFilters}
+            onChange={handleSaveFilters}
+            onStepComplete={handleTutorialNext}
+            tutorialStep={tutorialStep}
+            isTutorialActive={isTutorialActive}
+          />
         </Col>
         <Col span={12}>
-          <PromptPanel filters={savedFilters} onSubmit={handleSubmit} />
+          <PromptPanel
+            filters={savedFilters}
+            onStepComplete={handleTutorialNext}
+            tutorialStep={tutorialStep}
+            isTutorialActive={isTutorialActive}
+          />
         </Col>
       </Row>
+      {isTutorialActive && (
+        <Tutorial
+          isFirstTimeUser={isFirstTimeUser}
+          onComplete={handleTutorialComplete}
+          onNext={handleTutorialNext}
+          currentStep={tutorialStep}
+        />
+      )}
     </>
   );
 };
