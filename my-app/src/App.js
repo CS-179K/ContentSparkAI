@@ -1,7 +1,12 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { ConfigProvider, Layout, theme } from "antd";
+import { ConfigProvider, Layout, theme, Spin } from "antd";
 import Home from "./components/Home/Home";
 import Login from "./components/Login/Login";
 import History from "./components/History/History";
@@ -14,15 +19,50 @@ const { darkAlgorithm } = theme;
 const googleClientId = process.env.REACT_APP_GOOGLE_OAUTH_CLIENT_ID;
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   return isAuthenticated ? children : <Navigate to="/" replace />;
 };
 
 function AppRoutes() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   return (
     <Routes>
-      <Route path="/" element={isAuthenticated ? <Navigate to="/home" replace /> : <Login />} />
+      <Route
+        path="/"
+        element={isAuthenticated ? <Navigate to="/home" replace /> : <Login />}
+      />
       <Route
         path="/home"
         element={
@@ -56,8 +96,8 @@ function App() {
   return (
     <div className="App">
       <GoogleOAuthProvider clientId={googleClientId}>
-        <AuthProvider>
-          <Router>
+        <Router>
+          <AuthProvider>
             <ConfigProvider theme={{ algorithm: darkAlgorithm }}>
               <Layout className="layout">
                 <Content>
@@ -65,8 +105,8 @@ function App() {
                 </Content>
               </Layout>
             </ConfigProvider>
-          </Router>
-        </AuthProvider>
+          </AuthProvider>
+        </Router>
       </GoogleOAuthProvider>
     </div>
   );
