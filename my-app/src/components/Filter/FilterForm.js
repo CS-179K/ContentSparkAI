@@ -1,6 +1,17 @@
-import React, { useState } from "react";
-import { Form, Select, Button, Card, Row, Col, message } from "antd";
+import React, { useState, useEffect } from "react";
+import {
+  Form,
+  Select,
+  Button,
+  Card,
+  Row,
+  Col,
+  Modal,
+  Input,
+  message,
+} from "antd";
 import { useAuth } from "../Context/AuthContext";
+import { useFilter } from "../Context/FilterContext";
 
 const { Option } = Select;
 
@@ -13,22 +24,61 @@ const FilterForm = ({
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [filterTitle, setFilterTitle] = useState("");
+  const [filtersToSave, setFiltersToSave] = useState(null);
   const { api } = useAuth();
+  const { currentFilter, updateCurrentFilter } = useFilter();
 
-  const handleSave = async (values) => {
+  useEffect(() => {
+    if (currentFilter) {
+      form.setFieldsValue(currentFilter);
+      onChange(currentFilter);
+      updateCurrentFilter(null);
+    }
+  }, [currentFilter, form, onChange, updateCurrentFilter]);
+
+  const handleSave = async () => {
+    const values = await form.validateFields();
+    setFiltersToSave(values);
+    setIsModalVisible(true);
+  };
+
+  const handleModalOk = async () => {
+    if (!filterTitle.trim()) {
+      message.error("Please enter a filter name");
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await api.post("/saveFilter", values);
-      onSave(values);
+      const response = await api.post("/save-filter", {
+        ...filtersToSave,
+        title: filterTitle,
+      });
       message.success(response.data.message);
+      setIsModalVisible(false);
+      setFilterTitle("");
+      onSave(filtersToSave);
       if (isTutorialActive) {
         onStepComplete();
       }
     } catch (error) {
-      message.error(error.message);
+      if (error.response && error.response.status === 409) {
+        message.error(
+          "A filter with this name already exists. Please choose a different name."
+        );
+      } else {
+        message.error(error.response?.data?.message ?? "Failed to save filter");
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleModalCancel = () => {
+    setIsModalVisible(false);
+    setFilterTitle("");
   };
 
   const handleChange = (changedValues, allValues) => {
@@ -313,6 +363,21 @@ const FilterForm = ({
           </Button>
         </Form.Item>
       </Form>
+      <Modal
+        className="fltr-save"
+        title="Save Filter"
+        visible={isModalVisible}
+        onOk={handleModalOk}
+        onCancel={handleModalCancel}
+        maskStyle={{ backgroundColor: "rgba(0, 0, 0, 0.45)", zIndex: 1001 }}
+        style={{ zIndex: 1002 }}
+      >
+        <Input
+          placeholder="Enter filter name"
+          value={filterTitle}
+          onChange={(e) => setFilterTitle(e.target.value)}
+        />
+      </Modal>
     </Card>
   );
 };
