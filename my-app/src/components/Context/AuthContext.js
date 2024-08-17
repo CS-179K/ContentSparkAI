@@ -1,12 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 import { message } from "antd";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   // Create a separate instance for token refreshing
   const refreshApi = axios.create({
@@ -90,6 +93,7 @@ export const AuthProvider = ({ children }) => {
       const response = await api.post("/login", { token: googleToken });
       setIsAuthenticated(true);
       setUser(response.data.user);
+      navigate("/home");
     } catch (error) {
       message.error(error.response?.data?.message ?? "Login failed");
     }
@@ -103,6 +107,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setIsAuthenticated(false);
       setUser(null);
+      navigate("/");
     }
   };
 
@@ -116,13 +121,17 @@ export const AuthProvider = ({ children }) => {
         console.error("Auth check failed:", error);
         setIsAuthenticated(false);
         setUser(null);
+      } finally {
+        setLoading(false);
       }
     };
     checkAuth();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, api }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, user, login, logout, api, loading }}
+    >
       {children}
     </AuthContext.Provider>
   );

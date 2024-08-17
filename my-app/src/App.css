@@ -20,13 +20,14 @@ body {
   left: 9px;
 }
 /*History*/
-.hstry-container .ant-input {
+.hstry-container .ant-input, .fav-container .ant-input,.fltr-save .ant-input {
   border: 1px solid #424242 !important;
   background: #141414 !important;
   color: #ffffff !important;
   border-radius: 6px 0 0 6px !important;
 }
-.hstry-container .ant-input-search>.ant-input-group>.ant-input-group-addon:last-child .ant-input-search-button {
+.hstry-container .ant-input-search>.ant-input-group>.ant-input-group-addon:last-child .ant-input-search-button,
+.fav-container .ant-input-search>.ant-input-group>.ant-input-group-addon:last-child .ant-input-search-button {
   border-radius: 0 6px 6px 0 !important;
   background: #141414 !important;
   color: #ffffff !important;

@@ -73,14 +73,7 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
       }
     }
     return () => {
-      steps.forEach((step) => {
-        const el = document.querySelector(step.target);
-        if (el) el.style.boxShadow = "none";
-        if (step.additionalHighlight) {
-          const additionalEl = document.querySelector(step.additionalHighlight);
-          if (additionalEl) additionalEl.style.boxShadow = "none";
-        }
-      });
+      unhighlightAllElements();
     };
   }, [visible, currentStep]);
 
@@ -96,6 +89,24 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
     element.style.zIndex = "1001";
     element.style.position = "relative";
     element.style.pointerEvents = "auto";
+  };
+
+  const unhighlightElement = (element) => {
+    element.style.boxShadow = "";
+    element.style.zIndex = "";
+    element.style.position = "";
+    element.style.pointerEvents = "";
+  };
+
+  const unhighlightAllElements = () => {
+    steps.forEach((step) => {
+      const el = document.querySelector(step.target);
+      if (el) unhighlightElement(el);
+      if (step.additionalHighlight) {
+        const additionalEl = document.querySelector(step.additionalHighlight);
+        if (additionalEl) unhighlightElement(additionalEl);
+      }
+    });
   };
 
   const positionPopup = (targetElement, position) => {
@@ -124,11 +135,19 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
 
   const handleSkip = () => {
     setVisible(false);
+    unhighlightAllElements();
     onComplete();
   };
 
   const handleNext = () => {
-    if(currentStep === 7) {
+    const currentElement = document.querySelector(steps[currentStep].target);
+    if (currentElement) unhighlightElement(currentElement);
+    if (steps[currentStep].additionalHighlight) {
+      const additionalElement = document.querySelector(steps[currentStep].additionalHighlight);
+      if (additionalElement) unhighlightElement(additionalElement);
+    }
+  
+    if (currentStep === steps.length - 1) {
       handleSkip();
     } else {
       onNext();

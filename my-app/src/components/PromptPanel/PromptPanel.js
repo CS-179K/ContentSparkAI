@@ -173,9 +173,7 @@ const PromptPanel = ({
   const handleSaveAsFavourite = async () => {
     setIsSaving(true);
     try {
-      const result = await api.post("/set-favorite", {
-        contentId: lastGeneratedContentId,
-      });
+      const result = await api.post(`/set-favorite/${lastGeneratedContentId}`);
       message.success(result.data.message);
       fetchPreviousContent();
     } catch (error) {
