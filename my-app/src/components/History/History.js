@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Card,
   Typography,
@@ -10,6 +10,7 @@ import {
   Select,
   Tag,
   message,
+  Empty,
 } from "antd";
 import { DeleteOutlined, StarOutlined } from "@ant-design/icons";
 import { FixedSizeList as List } from "react-window";
@@ -36,7 +37,7 @@ const History = () => {
     } catch (error) {
       console.error("Error fetching data:", error);
     }
-  }, []);
+  }, [api]);
 
   useEffect(() => {
     fetchHistory();
@@ -54,7 +55,18 @@ const History = () => {
   };
 
   const handleFavorite = async (id) => {
-    // Implement favorite functionality
+    try {
+      const response = await api.post(`/set-favorite/${id}`);
+      message.success(response.data.message);
+      setHistory((prevHistory) =>
+        prevHistory.map((item) =>
+          item._id === id ? { ...item, isFavourite: !item.isFavourite } : item
+        )
+      );
+    } catch (error) {
+      console.error("Error marking item:", error);
+      message.error(error.response?.data?.message ?? "Marking failed");
+    }
   };
 
   const showModal = (item) => {
@@ -102,19 +114,29 @@ const History = () => {
     return String(value);
   };
 
-  const filteredAndSortedHistory = history
-    .filter(
-      (item) =>
-        item.prompt.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.response.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
+  const sortedHistory = useMemo(() => {
+    return [...history].sort((a, b) => {
       if (sortOrder === "newest") {
         return new Date(b.createdAt) - new Date(a.createdAt);
       } else {
         return new Date(a.createdAt) - new Date(b.createdAt);
       }
     });
+  }, [history, sortOrder]);
+
+  const filteredAndSortedHistory = useMemo(() => {
+    return sortedHistory.filter((item) => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        item.title.toLowerCase().includes(searchLower) ||
+        item.prompt.toLowerCase().includes(searchLower) ||
+        item.response.toLowerCase().includes(searchLower) ||
+        Object.values(item.filters).some((value) =>
+          String(value).toLowerCase().includes(searchLower)
+        )
+      );
+    });
+  }, [sortedHistory, searchTerm]);
 
   const Row = ({ index, style }) => {
     const item = filteredAndSortedHistory[index];
@@ -142,7 +164,7 @@ const History = () => {
                 handleFavorite(item._id);
               }}
             >
-              Save to Favorite
+              {item.isFavourite ? "Remove from Favorite" : "Save to Favorite"}
             </Button>
             <Button
               type="primary"
@@ -167,7 +189,7 @@ const History = () => {
       <div className="hstry-container" style={{ padding: "24px" }}>
         <Space style={{ marginBottom: "16px" }}>
           <Search
-            placeholder="Search in history"
+            placeholder="Search..."
             onSearch={setSearchTerm}
             style={{ width: 200 }}
           />
@@ -180,14 +202,25 @@ const History = () => {
             <Option value="oldest">Oldest</Option>
           </Select>
         </Space>
-        <List
-          height={window.innerHeight - 200}
-          itemCount={filteredAndSortedHistory.length}
-          itemSize={264}
-          width="100%"
-        >
-          {Row}
-        </List>
+        {filteredAndSortedHistory.length > 0 ? (
+          <List
+            height={window.innerHeight - 200}
+            itemCount={filteredAndSortedHistory.length}
+            itemSize={264}
+            width="100%"
+          >
+            {Row}
+          </List>
+        ) : (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              <span>
+                No history found. Start generating content to see it here!
+              </span>
+            }
+          />
+        )}
         <Modal
           visible={isModalVisible}
           onCancel={handleModalClose}
@@ -200,7 +233,9 @@ const History = () => {
                   onClick={() => handleFavorite(selectedItem._id)}
                   style={{ marginRight: 8 }}
                 >
-                  Save to Favorite
+                  {selectedItem.isFavourite
+                    ? "Remove from Favorite"
+                    : "Save to Favorite"}
                 </Button>
                 <Button
                   type="primary"

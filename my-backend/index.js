@@ -13,7 +13,6 @@ const { body, validationResult } = require("express-validator");
 const app = express();
 const port = process.env.PORT || 5005;
 
-
 app.disable("x-powered-by");
 
 // Middleware
@@ -136,11 +135,10 @@ const filterSchema = new mongoose.Schema({
   contentGoal: String,
   maxContentLength: String,
   language: String,
-  isFavourite: { type: Boolean, default: true },
+  title: String,
 });
 
 const Filter = mongoose.model("Filter", filterSchema);
-
 
 // Middleware to authenticate token
 const generateAccessToken = (userId) => {
@@ -268,7 +266,9 @@ const filterValidationRules = [
     .isArray()
     .customSanitizer((value) =>
       Array.isArray(value)
-        ? value.map((item) => (typeof item === "string" ? item.trim() : item))
+        ? value.map((item) =>
+            typeof item === "string" ? item.trim().escape() : item
+          )
         : []
     ),
   body("gender").trim().escape(),
@@ -279,12 +279,15 @@ const filterValidationRules = [
     .isArray()
     .customSanitizer((value) =>
       Array.isArray(value)
-        ? value.map((item) => (typeof item === "string" ? item.trim() : item))
+        ? value.map((item) =>
+            typeof item === "string" ? item.trim().escape() : item
+          )
         : []
     ),
   body("contentGoal").trim().escape(),
   body("maxContentLength").trim().escape(),
   body("language").trim().escape(),
+  body("title").trim().escape(),
 ];
 
 const contentValidationRules = [
@@ -296,7 +299,9 @@ const contentValidationRules = [
     .isArray()
     .customSanitizer((value) =>
       Array.isArray(value)
-        ? value.map((item) => (typeof item === "string" ? item.trim() : item))
+        ? value.map((item) =>
+            typeof item === "string" ? item.trim().escape() : item
+          )
         : []
     ),
   body("filters.gender").trim().escape(),
@@ -307,7 +312,9 @@ const contentValidationRules = [
     .isArray()
     .customSanitizer((value) =>
       Array.isArray(value)
-        ? value.map((item) => (typeof item === "string" ? item.trim() : item))
+        ? value.map((item) =>
+            typeof item === "string" ? item.trim().escape() : item
+          )
         : []
     ),
   body("filters.contentGoal").trim().escape(),
@@ -315,23 +322,40 @@ const contentValidationRules = [
   body("filters.language").trim().escape(),
   body("prompt").trim().escape(),
   body("response").trim().escape(),
+  body("title").trim().escape(),
 ];
 
-// Save filters endpoint
+// Save filters as favourite endpoint
+// Save filters as favourite endpoint
 app.post(
   "/api/save-filter",
   authenticate,
-  filterValidationRules,
+  [
+    ...filterValidationRules,
+    body("title").trim().notEmpty().withMessage("Title is required"),
+  ],
   async (req, res) => {
     console.log("Received filter data:", JSON.stringify(req.body, null, 2));
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
       console.log("Validation errors:", errors.array());
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ message: errors.array() });
     }
 
     try {
+      // Check if a filter with the same title already exists for this user
+      const existingFilter = await Filter.findOne({
+        userId: req.userId,
+        title: req.body.title,
+      });
+
+      if (existingFilter) {
+        return res
+          .status(409)
+          .json({ message: "A filter with this name already exists" });
+      }
+
       const filterData = new Filter({ ...req.body, userId: req.userId });
       console.log(
         "Filter data after validation:",
@@ -341,12 +365,12 @@ app.post(
       res.status(201).send({ message: "Filter saved successfully!" });
     } catch (error) {
       console.error("Error saving filter:", error);
-      res.status(500).send({ error: "Failed to save filter data" });
+      res.status(500).send({ message: "Failed to save filter data" });
     }
   }
 );
 
-// Save generated content endpoint
+// Save user history endpoint
 app.post(
   "/api/save-content",
   authenticate,
@@ -357,7 +381,7 @@ app.post(
 
     if (!errors.isEmpty()) {
       console.log("Validation errors:", errors.array());
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ message: errors.array() });
     }
 
     try {
@@ -381,7 +405,7 @@ app.post(
       res.status(201).send(newContent); // Return the newly created content
     } catch (error) {
       console.error("Error saving content:", error);
-      res.status(500).send({ error: "Failed to save content" });
+      res.status(500).send({ message: "Failed to save content" });
     }
   }
 );
@@ -393,7 +417,7 @@ app.get("/api/get-history", authenticate, async (req, res) => {
     res.status(200).json(history);
   } catch (error) {
     console.error("Error fetching history:", error); // Log the error for debugging
-    res.status(500).send({ error: "Failed to fetch history" });
+    res.status(500).send({ message: "Failed to fetch history" });
   }
 });
 
@@ -408,13 +432,13 @@ app.get("/api/get-favorites", authenticate, async (req, res) => {
     res.status(200).json({ favorites, filters });
   } catch (error) {
     console.error("Error fetching favorites:", error); // Log the error for debugging
-    res.status(500).send({ error: "Failed to fetch favorites" });
+    res.status(500).send({ message: "Failed to fetch favorites" });
   }
 });
 
-// Mark/unmark content as favorite endpoint
-app.post("/api/set-favorite", authenticate, async (req, res) => {
-  const { contentId } = req.body;
+// Mark/unmark user history as favorite endpoint
+app.post("/api/set-favorite/:id", authenticate, async (req, res) => {
+  const contentId = req.params.id;
   try {
     const content = await GeneratedContent.findOne({
       _id: contentId,
@@ -435,42 +459,12 @@ app.post("/api/set-favorite", authenticate, async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating favorite status:", error);
-    res.status(500).send({ error: "Failed to update favorite status" });
+    res.status(500).send({ message: "Failed to update favorite status" });
   }
 });
 
-app.post("/api/set-favorite", authenticate, async (req, res) => {
-  const { contentId } = req.body;
-  try {
-    let content;
-    if (!contentId) {
-      content = await GeneratedContent.findOne({ userId: req.userId }).sort({
-        createdAt: -1,
-      });
-    } else {
-      content = await GeneratedContent.findOne({
-        _id: contentId,
-        userId: req.userId,
-      });
-    }
-
-    if (!content) {
-      return res.status(404).json({
-        message: "Content not found or you don't have permission to modify it.",
-      });
-    }
-
-    content.isFavourite = true;
-    await content.save();
-
-    res.status(200).json({ message: "Content saved as favorite", content });
-  } catch (error) {
-    console.error("Error saving content as favorite:", error);
-    res.status(500).send({ error: "Failed to save content as favorite" });
-  }
-});
-
-app.delete("/api/delete-content/:id", async (req, res) => {
+// Delete user history endpoint
+app.delete("/api/delete-content/:id", authenticate, async (req, res) => {
   try {
     const contentId = req.params.id;
     console.log("Attempting to delete content with ID:", contentId); // Add this log
@@ -496,49 +490,31 @@ app.delete("/api/delete-content/:id", async (req, res) => {
     console.error("Error deleting content:", error);
     res
       .status(500)
-      .json({ error: "Failed to delete content", details: error.message });
+      .json({ message: "Failed to delete content", details: error.message });
   }
 });
 
-// Route to fetch all filters for the authenticated user
-app.get('/api/get-filters', authenticate, async (req, res) => {
+// Delete user filter endpoint
+app.delete("/api/delete-filter/:id", authenticate, async (req, res) => {
   try {
-    // Fetch filters based on the user ID
-    const filters = await Filter.find({ userId: req.userId, isFavourite: true});
-
-      res.status(200).json(filters);
+    const filterId = req.params.id;
+    console.log(filterId, req.userId);
+    const existingFilter = await Filter.findById({
+      _id: filterId,
+      userId: req.userId,
+    });
+    if (!existingFilter) {
+      console.log("Filter not found in database"); // Add this log
+      return res.status(404).json({ error: "Filter not found" });
+    }
+    const deletedFilter = await Filter.findByIdAndDelete(filterId);
+    if (deletedFilter) {
+      res.status(200).json({ message: "Filter deleted successfully" });
+    } else {
+      res.status(404).json({ message: "Filter not found" });
+    }
   } catch (error) {
-      res.status(500).json({ message: 'Error fetching filters', error }); 
-  }
-});
-
-// Route to unfavorite a filter
-app.post('/api/unfavorite-filter/:id', async (req, res) => {
-  try {
-      const filter = await Filter.findById(req.params.id);
-      if (filter) {
-          filter.isFavourite = false;
-          await filter.save();
-          res.status(200).json({ message: 'Filter unfavorited successfully' });
-      } else {
-          res.status(404).json({ message: 'Filter not found' });
-      }
-  } catch (error) {
-      res.status(500).json({ message: 'Error unfavoriting filter', error });
-  }
-});
-
-// Route to delete a filter
-app.delete('/api/delete-filter/:id', async (req, res) => {
-  try {
-      const filter = await Filter.findByIdAndDelete(req.params.id);
-      if (filter) {
-          res.status(200).json({ message: 'Filter deleted successfully' });
-      } else {
-          res.status(404).json({ message: 'Filter not found' });
-      }
-  } catch (error) {
-      res.status(500).json({ message: 'Error deleting filter', error });
+    res.status(500).json({ message: "Error deleting filter", error });
   }
 });
 
@@ -551,7 +527,6 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send({ error: "Something went wrong!" });
 });
-
 
 // Start the server
 app.listen(port, () => {

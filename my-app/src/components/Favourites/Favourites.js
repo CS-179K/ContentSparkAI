@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Card,
   Typography,
@@ -10,13 +10,15 @@ import {
   Select,
   Tag,
   message,
+  Empty,
 } from "antd";
-import { DeleteOutlined, StarFilled } from "@ant-design/icons";
+import { StarFilled, CopyOutlined } from "@ant-design/icons";
 import { FixedSizeList as List } from "react-window";
+import DynamicResponse from "../DynamicResponse/DynamicResponse";
 import { useAuth } from "../Context/AuthContext";
 import AppHeader from "../Header/AppHeader";
 
-const { Text, Title } = Typography;
+const { Paragraph, Text, Title } = Typography;
 const { Search } = Input;
 const { Option } = Select;
 
@@ -30,8 +32,8 @@ const Favourites = () => {
 
   const fetchFavourites = useCallback(async () => {
     try {
-      const response = await api.get("/get-filters");
-      setFavourites(response.data);
+      const response = await api.get("/get-favorites");
+      setFavourites([...response.data.filters, ...response.data.favorites]);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -41,9 +43,14 @@ const Favourites = () => {
     fetchFavourites();
   }, [fetchFavourites]);
 
-  const handleUnfavorite = async (id) => {
+  const handleRemoveFavorite = async (id, isFilter) => {
     try {
-      const response = await api.post(`/unfavorite-filter/${id}`);
+      let response;
+      if (isFilter) {
+        response = await api.delete(`/delete-filter/${id}`);
+      } else {
+        response = await api.post(`/set-favorite/${id}`);
+      }
       message.success(response.data.message);
       fetchFavourites();
     } catch (error) {
@@ -52,15 +59,9 @@ const Favourites = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      const response = await api.delete(`/delete-filter/${id}`);
-      message.success(response.data.message);
-      fetchFavourites();
-    } catch (error) {
-      console.error("Error deleting item:", error);
-      message.error(error.response?.data?.message ?? "Deletion failed");
-    }
+  const handleCopyConfiguration = (filterConfig) => {
+    console.log("Copying configuration:", filterConfig);
+    message.success("Configuration copied to homepage");
   };
 
   const showModal = (item) => {
@@ -108,31 +109,33 @@ const Favourites = () => {
     return String(value);
   };
 
-  const toTitleCase = (str) => {
-    return str
-      .toLowerCase()
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
-  const filteredAndSortedFavourites = favourites
-    .filter((item) => {
-      const contentType = item.contentType?.toLowerCase() || "";
-      const industry = item.industry?.toLowerCase() || "";
-      const searchLower = searchTerm.toLowerCase();
-      return contentType.includes(searchLower) || industry.includes(searchLower);
-    })
-    .sort((a, b) => {
+  const sortedFavourites = useMemo(() => {
+    return [...favourites].sort((a, b) => {
       if (sortOrder === "newest") {
         return new Date(b.createdAt) - new Date(a.createdAt);
       } else {
         return new Date(a.createdAt) - new Date(b.createdAt);
       }
     });
+  }, [favourites, sortOrder]);
+
+  const filteredAndSortedFavourites = useMemo(() => {
+    return sortedFavourites.filter((item) => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        item.title?.toLowerCase().includes(searchLower) ||
+        item.contentType?.toLowerCase().includes(searchLower) ||
+        item.industry?.toLowerCase().includes(searchLower) ||
+        (item.prompt && item.prompt.toLowerCase().includes(searchLower)) ||
+        (item.response && item.response.toLowerCase().includes(searchLower))
+      );
+    });
+  }, [sortedFavourites, searchTerm]);
 
   const Row = ({ index, style }) => {
     const item = filteredAndSortedFavourites[index];
+    const isFilter = !item.prompt;
+
     return (
       <div
         style={{ ...style, borderBottom: "1px solid #303030", padding: "16px" }}
@@ -142,31 +145,50 @@ const Favourites = () => {
           onClick={() => showModal(item)}
           style={{ width: "100%", cursor: "pointer" }}
         >
-          <Title level={4}>{toTitleCase(item.contentType)}</Title>
-          <Text>Industry: {toTitleCase(item.industry)}</Text>
-          <br></br>
-          <Space style={{ marginTop: 16 }}>
+          {isFilter ? (
+            <>
+              <Title level={2}>{item.title}</Title>
+              <Paragraph ellipsis={{ rows: 1, expandable: false }}>
+                <Text>ContentType: {item.contentType}</Text>
+              </Paragraph>
+              <Paragraph ellipsis={{ rows: 1, expandable: false }}>
+                <Text>Industry: {item.industry}</Text>
+              </Paragraph>
+            </>
+          ) : (
+            <>
+              <Paragraph ellipsis={{ rows: 1, expandable: false }}>
+                <Title level={2}>{item.title}</Title>
+              </Paragraph>
+              <Paragraph ellipsis={{ rows: 2, expandable: false }}>
+                <Text strong>Response:</Text> {item.response}
+              </Paragraph>
+            </>
+          )}
+          <Space>
             <Button
               type="primary"
               danger
-              icon={<DeleteOutlined />}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(item._id);
-              }}
-            >
-              Delete
-            </Button>
-            <Button
-              type="primary"
               icon={<StarFilled />}
               onClick={(e) => {
                 e.stopPropagation();
-                handleUnfavorite(item._id);
+                handleRemoveFavorite(item._id, isFilter);
               }}
             >
-              Unfavorite
+              Remove from Favorite
             </Button>
+            {isFilter && (
+              <Button
+                type="primary"
+                icon={<CopyOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyConfiguration(item);
+                }}
+              >
+                Copy Configuration to Homepage
+              </Button>
+            )}
           </Space>
         </Card>
       </div>
@@ -179,7 +201,7 @@ const Favourites = () => {
       <div className="fav-container" style={{ padding: "24px" }}>
         <Space style={{ marginBottom: "16px" }}>
           <Search
-            placeholder="Search by content type or industry"
+            placeholder="Search..."
             onSearch={setSearchTerm}
             style={{ width: 200 }}
           />
@@ -192,14 +214,25 @@ const Favourites = () => {
             <Option value="oldest">Oldest</Option>
           </Select>
         </Space>
-        <List
-          height={window.innerHeight - 200}
-          itemCount={filteredAndSortedFavourites.length}
-          itemSize={264}
-          width="100%"
-        >
-          {Row}
-        </List>
+        {filteredAndSortedFavourites.length > 0 ? (
+          <List
+            height={window.innerHeight - 200}
+            itemCount={filteredAndSortedFavourites.length}
+            itemSize={264}
+            width="100%"
+          >
+            {Row}
+          </List>
+        ) : (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              <span>
+                No history found. Start generating content to see it here!
+              </span>
+            }
+          />
+        )}
         <Modal
           visible={isModalVisible}
           onCancel={handleModalClose}
@@ -209,22 +242,27 @@ const Favourites = () => {
                 <Button
                   type="primary"
                   danger
-                  icon={<DeleteOutlined />}
+                  icon={<StarFilled />}
                   onClick={() => {
-                    handleDelete(selectedItem._id);
+                    handleRemoveFavorite(
+                      selectedItem._id,
+                      !selectedItem.prompt
+                    );
                     handleModalClose();
                   }}
                   style={{ marginRight: 8 }}
                 >
-                  Delete
+                  Remove from Favorite
                 </Button>
-                <Button
-                  type="primary"
-                  icon={<StarFilled />}
-                  onClick={() => handleUnfavorite(selectedItem._id)}
-                >
-                  Unfavorite
-                </Button>
+                {!selectedItem.prompt && (
+                  <Button
+                    type="primary"
+                    icon={<CopyOutlined />}
+                    onClick={() => handleCopyConfiguration(selectedItem)}
+                  >
+                    Copy Configuration to Homepage
+                  </Button>
+                )}
               </div>
             )
           }
@@ -233,11 +271,21 @@ const Favourites = () => {
         >
           {selectedItem && (
             <>
-              <Title level={2}>{toTitleCase(selectedItem.contentType)}</Title>
+              <Title level={2}>
+                {selectedItem.title || selectedItem.contentType}
+              </Title>
               <Table
                 columns={columns}
-                dataSource={Object.entries(selectedItem)
-                  .filter(([_, value]) => value && value.length > 0)
+                dataSource={Object.entries(selectedItem.filters || selectedItem)
+                  .filter(
+                    ([key, value]) =>
+                      value &&
+                      value.length > 0 &&
+                      key !== "prompt" &&
+                      key !== "response" &&
+                      key !== "_id" &&
+                      key !== "userId"
+                  )
                   .map(([key, value]) => ({
                     key,
                     value: formatFilterValue(value),
@@ -245,6 +293,18 @@ const Favourites = () => {
                 pagination={false}
                 size="small"
               />
+              {selectedItem.prompt && (
+                <Paragraph style={{ marginTop: "24px" }}>
+                  <Title level={3}>Prompt:</Title>
+                  <DynamicResponse content={selectedItem.prompt} />
+                </Paragraph>
+              )}
+              {selectedItem.response && (
+                <>
+                  <Title level={3}>Response:</Title>
+                  <DynamicResponse content={selectedItem.response} />
+                </>
+              )}
             </>
           )}
         </Modal>
