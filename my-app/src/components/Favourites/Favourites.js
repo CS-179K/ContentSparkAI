@@ -17,6 +17,7 @@ import { FixedSizeList as List } from "react-window";
 import DynamicResponse from "../DynamicResponse/DynamicResponse";
 import { useAuth } from "../Context/AuthContext";
 import AppHeader from "../Header/AppHeader";
+import { useFilter } from "../Context/FilterContext";
 
 const { Paragraph, Text, Title } = Typography;
 const { Search } = Input;
@@ -29,6 +30,7 @@ const Favourites = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState("newest");
   const { api } = useAuth();
+  const { updateCurrentFilter } = useFilter();
 
   const fetchFavourites = useCallback(async () => {
     try {
@@ -60,7 +62,7 @@ const Favourites = () => {
   };
 
   const handleCopyConfiguration = (filterConfig) => {
-    console.log("Copying configuration:", filterConfig);
+    updateCurrentFilter(filterConfig);
     message.success("Configuration copied to homepage");
   };
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Form,
   Select,
@@ -11,6 +11,7 @@ import {
   message,
 } from "antd";
 import { useAuth } from "../Context/AuthContext";
+import { useFilter } from "../Context/FilterContext";
 
 const { Option } = Select;
 
@@ -27,6 +28,15 @@ const FilterForm = ({
   const [filterTitle, setFilterTitle] = useState("");
   const [filtersToSave, setFiltersToSave] = useState(null);
   const { api } = useAuth();
+  const { currentFilter, updateCurrentFilter } = useFilter();
+
+  useEffect(() => {
+    if (currentFilter) {
+      form.setFieldsValue(currentFilter);
+      onChange(currentFilter);
+      updateCurrentFilter(null);
+    }
+  }, [currentFilter, form, onChange, updateCurrentFilter]);
 
   const handleSave = async () => {
     const values = await form.validateFields();

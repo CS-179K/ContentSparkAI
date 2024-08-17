@@ -12,6 +12,7 @@ import Login from "./components/Login/Login";
 import History from "./components/History/History";
 import Favourites from "./components/Favourites/Favourites";
 import { AuthProvider, useAuth } from "./components/Context/AuthContext";
+import { FilterProvider } from "./components/Context/FilterContext";
 import "./App.css";
 
 const { Content } = Layout;
@@ -98,13 +99,15 @@ function App() {
       <GoogleOAuthProvider clientId={googleClientId}>
         <Router>
           <AuthProvider>
-            <ConfigProvider theme={{ algorithm: darkAlgorithm }}>
-              <Layout className="layout">
-                <Content>
-                  <AppRoutes />
-                </Content>
-              </Layout>
-            </ConfigProvider>
+            <FilterProvider>
+              <ConfigProvider theme={{ algorithm: darkAlgorithm }}>
+                <Layout className="layout">
+                  <Content>
+                    <AppRoutes />
+                  </Content>
+                </Layout>
+              </ConfigProvider>
+            </FilterProvider>
           </AuthProvider>
         </Router>
       </GoogleOAuthProvider>
