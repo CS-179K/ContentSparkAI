@@ -116,7 +116,7 @@ const contentSchema = new mongoose.Schema({
   prompt: String,
   response: String,
   isFavourite: { type: Boolean, default: false }
-});
+}, { timestamps: true }); // This adds createdAt and updatedAt fields
 
 const GeneratedContent = mongoose.model("GeneratedContent", contentSchema);
 // Define Filter Schema and Model
@@ -133,7 +133,7 @@ const filterSchema = new mongoose.Schema({
   contentGoal: String,
   maxContentLength: String,
   language: String,
-});
+}, { timestamps: true }); // This adds createdAt and updatedAt fields
 
 const Filter = mongoose.model("Filter", filterSchema);
 
