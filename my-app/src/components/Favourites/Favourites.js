@@ -230,7 +230,7 @@ const Favourites = () => {
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
               <span>
-                No history found. Start generating content to see it here!
+                No favourites found. Start saving content to see it here!
               </span>
             }
           />
