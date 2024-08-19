@@ -268,7 +268,7 @@ const filterValidationRules = [
     .customSanitizer((value) =>
       Array.isArray(value)
         ? value.map((item) =>
-            typeof item === "string" ? item.trim().escape() : item
+            typeof item === "string" ? item.trim() : item
           )
         : []
     ),
@@ -281,7 +281,7 @@ const filterValidationRules = [
     .customSanitizer((value) =>
       Array.isArray(value)
         ? value.map((item) =>
-            typeof item === "string" ? item.trim().escape() : item
+            typeof item === "string" ? item.trim() : item
           )
         : []
     ),
