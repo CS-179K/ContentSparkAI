@@ -12,6 +12,7 @@ import Login from "./components/Login/Login";
 import History from "./components/History/History";
 import Favourites from "./components/Favourites/Favourites";
 import ContentPerformance from "./components/ContentPerformance/ContentPerformance";
+import RedditOAuth from "./components/RedditOAuth/RedditOAuth";
 import { AuthProvider, useAuth } from "./components/Context/AuthContext";
 import { FilterProvider } from "./components/Context/FilterContext";
 import "./App.css";
@@ -94,6 +95,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ContentPerformance />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reddit-callback"
+        element={
+          <ProtectedRoute>
+            <RedditOAuth />
           </ProtectedRoute>
         }
       />
