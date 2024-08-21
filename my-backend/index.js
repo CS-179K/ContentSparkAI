@@ -9,6 +9,9 @@ const jwt = require("jsonwebtoken");
 const expressSanitizer = require("express-sanitizer");
 const hpp = require("hpp");
 const { body, validationResult } = require("express-validator");
+const snoowrap = require("snoowrap");
+const axios = require("axios");
+const cron = require("node-cron");
 
 const app = express();
 const port = process.env.PORT || 5005;
@@ -37,20 +40,39 @@ app.use(
         "'strict-dynamic'",
         "https://accounts.google.com/gsi/client",
         "https://apis.google.com",
+        "https://www.reddit.com",
+        "https://oauth.reddit.com",
       ],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
-      imgSrc: ["'self'", "data:", "https://accounts.google.com"],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://accounts.google.com",
+        "https://www.reddit.com",
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https://accounts.google.com",
+        "https://www.reddit.com",
+        "https://oauth.reddit.com",
+      ],
       connectSrc: [
         "'self'",
         "https://accounts.google.com",
         "https://www.googleapis.com",
+        "https://www.reddit.com",
+        "https://oauth.reddit.com",
       ],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'none'"],
-      frameSrc: ["https://accounts.google.com"],
+      frameSrc: ["https://accounts.google.com", "https://www.reddit.com"],
       childSrc: ["'none'"],
-      formAction: ["'self'", "https://accounts.google.com"],
+      formAction: [
+        "'self'",
+        "https://accounts.google.com",
+        "https://www.reddit.com",
+      ],
       frameAncestors: ["'none'"],
       baseUri: ["'self'"],
       manifestSrc: ["'self'"],
@@ -94,14 +116,47 @@ const userSchema = new mongoose.Schema({
   name: String,
   createdAt: { type: Date, default: Date.now }, // Timestamp for when the user was created
   lastLogin: { type: Date, default: Date.now }, // Last login timestamp
+  redditRefreshToken: String,
 });
 
 const User = mongoose.model("User", userSchema);
 
 // Define Content Schema and Model
-const contentSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the user
-  filters: {
+const contentSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the user
+    filters: {
+      contentType: String,
+      industry: String,
+      ageRange: String,
+      interests: [String],
+      gender: String,
+      incomeLevel: String,
+      tone: String,
+      themes: [String],
+      contentGoal: String,
+      maxContentLength: String,
+      language: String,
+    },
+    prompt: String,
+    response: String,
+    title: String,
+    isFavourite: { type: Boolean, default: false },
+    redditMetrics: {
+      postId: String,
+      upvotes: { type: Number, default: 0 },
+      comments: { type: Number, default: 0 },
+      lastUpdated: Date,
+    },
+  },
+  { timestamps: true }
+); // This adds createdAt and updatedAt fields
+
+const GeneratedContent = mongoose.model("GeneratedContent", contentSchema);
+// Define Filter Schema and Model
+const filterSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the user
     contentType: String,
     industry: String,
     ageRange: String,
@@ -113,31 +168,10 @@ const contentSchema = new mongoose.Schema({
     contentGoal: String,
     maxContentLength: String,
     language: String,
+    title: String,
   },
-  prompt: String,
-  response: String,
-  title: String,
-  isFavourite: { type: Boolean, default: false },
-}, { timestamps: true }); // This adds createdAt and updatedAt fields
-
-const GeneratedContent = mongoose.model("GeneratedContent", contentSchema);
-// Define Filter Schema and Model
-const filterSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the user
-  contentType: String,
-  industry: String,
-  ageRange: String,
-  interests: [String],
-  gender: String,
-  incomeLevel: String,
-  tone: String,
-  themes: [String],
-  contentGoal: String,
-  maxContentLength: String,
-  language: String,
-  title: String,
-}, { timestamps: true   
-}); // This adds createdAt and updatedAt fields
+  { timestamps: true }
+); // This adds createdAt and updatedAt fields
 
 const Filter = mongoose.model("Filter", filterSchema);
 
@@ -324,9 +358,14 @@ const contentValidationRules = [
   body("prompt").trim().escape(),
   body("response").trim().escape(),
   body("title").trim().escape(),
+  body("isFavourite").optional().isBoolean(),
+  body("redditMetrics").optional(),
+  body("redditMetrics.postId").optional().isString().trim(),
+  body("redditMetrics.upvotes").optional().isInt({ min: 0 }),
+  body("redditMetrics.comments").optional().isInt({ min: 0 }),
+  body("redditMetrics.lastUpdated").optional().isISO8601().toDate(),
 ];
 
-// Save filters as favourite endpoint
 // Save filters as favourite endpoint
 app.post(
   "/api/save-filter",
@@ -518,6 +557,268 @@ app.delete("/api/delete-filter/:id", authenticate, async (req, res) => {
     res.status(500).json({ message: "Error deleting filter", error });
   }
 });
+
+app.get("/api/check-reddit-link", authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    const isLinked = !!user.redditRefreshToken;
+    res.json({ isLinked });
+  } catch (error) {
+    console.error("Error checking Reddit link status:", error);
+    res.status(500).json({ message: "Failed to check Reddit link status" });
+  }
+});
+
+// New endpoint to initiate Reddit OAuth
+app.get("/api/reddit-auth", authenticate, (req, res) => {
+  const redditAuthUrl = `https://www.reddit.com/api/v1/authorize?client_id=${
+    process.env.REDDIT_CLIENT_ID
+  }&response_type=code&state=RandomString&redirect_uri=${encodeURIComponent(
+    process.env.REDDIT_REDIRECT_URI
+  )}&duration=permanent&scope=identity submit read history`;
+  res.json({ url: redditAuthUrl });
+});
+
+// New endpoint to handle Reddit OAuth callback
+app.post("/api/reddit-callback", authenticate, async (req, res) => {
+  const { code } = req.body;
+
+  try {
+    const tokenResponse = await axios.post(
+      "https://www.reddit.com/api/v1/access_token",
+      `grant_type=authorization_code&code=${code}&redirect_uri=${process.env.REDDIT_REDIRECT_URI}`,
+      {
+        auth: {
+          username: process.env.REDDIT_CLIENT_ID,
+          password: process.env.REDDIT_CLIENT_SECRET,
+        },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    const { refresh_token } = tokenResponse.data;
+
+    // Save the refresh token to the user's document
+    await User.findByIdAndUpdate(req.userId, {
+      redditRefreshToken: refresh_token,
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error in Reddit OAuth callback:", error);
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to authenticate with Reddit" });
+  }
+});
+
+app.post("/api/post-to-reddit/:id", authenticate, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    console.log(`Attempting to post content with ID: ${id}`);
+    const content = await GeneratedContent.findOne({
+      _id: id,
+      userId: req.userId,
+    });
+    if (!content) {
+      console.log("Content not found");
+      return res.status(404).json({ message: "Content not found" });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user.redditRefreshToken) {
+      console.log("Reddit account not linked");
+      return res.status(400).json({ message: "Reddit account not linked" });
+    }
+
+    console.log("Refreshing Reddit access token");
+    let tokenResponse;
+    try {
+      tokenResponse = await axios.post(
+        "https://www.reddit.com/api/v1/access_token",
+        `grant_type=refresh_token&refresh_token=${user.redditRefreshToken}`,
+        {
+          auth: {
+            username: process.env.REDDIT_CLIENT_ID,
+            password: process.env.REDDIT_CLIENT_SECRET,
+          },
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+      console.log("Token refresh successful");
+    } catch (error) {
+      console.error(
+        "Error refreshing Reddit token:",
+        error.response?.data || error.message
+      );
+      return res
+        .status(401)
+        .json({ message: "Failed to refresh Reddit token" });
+    }
+
+    const { access_token } = tokenResponse.data;
+
+    console.log("Initializing snoowrap");
+    const r = new snoowrap({
+      userAgent: process.env.REDDIT_USER_AGENT,
+      accessToken: access_token,
+    });
+
+    console.log("Getting Reddit user info");
+    const me = await r.getMe();
+    console.log("Reddit user:", me.name);
+
+    console.log("Attempting to submit post");
+    let submission;
+    try {
+      submission = await r.submitSelfpost({
+        subredditName: "u_" + me.name,
+        title: content.title,
+        text: content.response,
+      });
+
+      const postId = submission.name;
+      console.log("Post submitted successfully:", postId);
+
+      try {
+        const fullSubmission = await submission.fetch();
+        console.log(fullSubmission);
+        content.redditMetrics = {
+          postId: postId,
+          upvotes:
+            typeof fullSubmission.ups === "function"
+              ? await fullSubmission.ups()
+              : fullSubmission.ups || 0,
+          comments:
+            typeof fullSubmission.num_comments === "function"
+              ? await fullSubmission.num_comments()
+              : fullSubmission.num_comments || 0,
+          lastUpdated: new Date(),
+        };
+      } catch (fetchError) {
+        console.warn(
+          "Unable to fetch full submission details:",
+          fetchError.message
+        );
+        content.redditMetrics = {
+          postId: postId,
+          upvotes: 0,
+          comments: 0,
+          lastUpdated: new Date(),
+        };
+      }
+
+      await content.save();
+      console.log("Content updated with Reddit metrics");
+
+      res.status(200).json({
+        message: "Content posted to Reddit successfully",
+        redditMetrics: content.redditMetrics,
+      });
+    } catch (error) {
+      console.error("Error submitting post:", error);
+      return res.status(500).json({
+        message: "Failed to post content to Reddit",
+        error: error.message,
+      });
+    }
+  } catch (error) {
+    console.error("Unexpected error in post-to-reddit endpoint:", error);
+    res.status(500).json({
+      message: "Failed to post content to Reddit",
+      error: error.message,
+    });
+  }
+});
+
+async function updateRedditMetrics() {
+  console.log("Updating Reddit metrics...");
+  const now = new Date();
+  const contents = await GeneratedContent.find({
+    "redditMetrics.postId": { $exists: true },
+  });
+  console.log(`Found ${contents.length} posts to update`);
+
+  for (const content of contents) {
+    const user = await User.findById(content.userId);
+    if (!user || !user.redditRefreshToken) {
+      console.log(
+        `Skipping post ${content.redditMetrics.postId} due to missing user or refresh token`
+      );
+      continue;
+    }
+
+    const postAge = now - new Date(content.redditMetrics.lastUpdated);
+    const hoursSinceLastUpdate = postAge / (1000 * 60 * 60);
+
+    // Update frequency based on post age
+    if (
+      hoursSinceLastUpdate < 1 &&
+      new Date(content.redditMetrics.lastUpdated) -
+        new Date(content.createdAt) >
+        1000 * 60 * 60
+    ) {
+      console.log(
+        `Skipping post ${content.redditMetrics.postId} - updated less than an hour ago`
+      );
+      continue;
+    } else if (hoursSinceLastUpdate < 24 && postAge > 1000 * 60 * 60 * 24) {
+      console.log(
+        `Skipping post ${content.redditMetrics.postId} - older than a day and updated in last 24 hours`
+      );
+      continue;
+    }
+
+    try {
+      const r = new snoowrap({
+        userAgent: process.env.REDDIT_USER_AGENT,
+        clientId: process.env.REDDIT_CLIENT_ID,
+        clientSecret: process.env.REDDIT_CLIENT_SECRET,
+        refreshToken: user.redditRefreshToken,
+      });
+
+      console.log(
+        `Fetching submission for post ${content.redditMetrics.postId}`
+      );
+      const submission = await r
+        .getSubmission(content.redditMetrics.postId)
+        .fetch();
+      console.log("SUBMISSION", JSON.stringify(submission, null, 2));
+
+      content.redditMetrics = {
+        postId: content.redditMetrics.postId,
+        upvotes: typeof submission.ups === "number" ? submission.ups : 0,
+        comments:
+          typeof submission.num_comments === "number"
+            ? submission.num_comments
+            : 0,
+        lastUpdated: now,
+      };
+
+      await content.save();
+      console.log(
+        `Updated metrics for post ${content.redditMetrics.postId}: upvotes=${content.redditMetrics.upvotes}, comments=${content.redditMetrics.comments}`
+      );
+    } catch (error) {
+      console.error(
+        `Error updating metrics for post ${content.redditMetrics.postId}:`
+      );
+      if (error.statusCode === 403) {
+        console.error("403 Forbidden Error. Response:", error.response?.body);
+        console.error("Headers:", error.response?.headers);
+      }
+    }
+  }
+  console.log("Finished updating Reddit metrics");
+}
+
+// Run the update job every minute
+cron.schedule("*/2 * * * *", updateRedditMetrics);
 
 // Custom Error Handling Middleware
 app.use((err, req, res, next) => {
