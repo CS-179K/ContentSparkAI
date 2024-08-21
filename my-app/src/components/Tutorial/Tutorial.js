@@ -55,6 +55,12 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
         "The <b>Favourites</b> tab is where you can find all the content you've marked as favourite. It's a great way to keep your best creations easily accessible.",
       position: "bottom",
     },
+    {
+      target: '[data-tutorial="cms-tab"]',
+      content:
+        "The <b>Content Performance</b> tab is where you can find all the content the you can post on social media. It's a great way to monitor what's working out by measuring likes/comments etc.",
+      position: "bottom",
+    },
   ];
 
   useEffect(() => {
@@ -169,7 +175,7 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
         <p
           dangerouslySetInnerHTML={{ __html: steps[currentStep]?.content }}
         ></p>
-        {currentStep < 7 && (
+        {currentStep < 8 && (
         <Button type="primary" onClick={handleSkip} style={{ marginRight: '10px' }}>
           Skip Tutorial
         </Button>
@@ -188,7 +194,7 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
           right: 0;
           bottom: 0;
           z-index: 1000;
-          background-color: rgba(0, 0, 0, 0.9);
+          background-color: rgba(0, 0, 0, 0.5);
           pointer-events: auto;
         }
         .tutorial-content {
@@ -225,6 +231,8 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
           left: 50%;
           margin-left: -10px;
           border-bottom-color: white;
+          top: 0;
+          margin-top: -20px;
         }
       `}</style>
     </div>

@@ -6,6 +6,7 @@ import {
   HistoryOutlined,
   StarOutlined,
   LogoutOutlined,
+  BarChartOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../Context/AuthContext";
 
@@ -69,6 +70,14 @@ const AppHeader = ({ isTutorialActive = false }) => {
             ) : (
               <Link to="/favourites">Favourites</Link>
             )}
+          </Menu.Item>
+          <Menu.Item
+            key="/cms"
+            icon={<BarChartOutlined />}
+            style={menuItemStyle}
+            data-tutorial="cms-tab"
+          >
+            <Link to="/cms">Content Performance</Link>
           </Menu.Item>
         </Menu>
       </div>
