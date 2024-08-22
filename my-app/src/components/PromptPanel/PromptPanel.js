@@ -146,8 +146,9 @@ const PromptPanel = ({
         selectedFilters,
         selectedPreviousContent
       );
-
+      const start = performance.now();
       const result = await model.generateContent(fullPrompt);
+      console.log("API time: " + (performance.now() - start) / 1000);
       const generatedText = result.response.text();
       setResponse(generatedText);
       const title = await generateTitle(prompt, generatedText);

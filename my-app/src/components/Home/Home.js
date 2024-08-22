@@ -34,6 +34,10 @@ const Home = () => {
     setTutorialStep((prevStep) => prevStep + 1);
   };
 
+  const handleTutorialPrevious = () => {
+    setTutorialStep((prevStep) => Math.max(0, prevStep - 1));
+  };
+
   return (
     <>
       <AppHeader isTutorialActive={isTutorialActive} />
@@ -67,6 +71,7 @@ const Home = () => {
           isFirstTimeUser={isFirstTimeUser}
           onComplete={handleTutorialComplete}
           onNext={handleTutorialNext}
+          onPrevious={handleTutorialPrevious}
           currentStep={tutorialStep}
         />
       )}

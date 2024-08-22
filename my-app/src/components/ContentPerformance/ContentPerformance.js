@@ -216,6 +216,7 @@ const ContentPerformance = () => {
       key: "action",
       render: (_, record) => (
         <Button
+          type="primary"
           onClick={() => handlePostToReddit(record._id)}
           disabled={record.redditMetrics?.postId}
         >
