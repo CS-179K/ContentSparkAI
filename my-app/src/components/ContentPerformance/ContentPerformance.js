@@ -4,11 +4,14 @@ import moment from "moment";
 import { RedditOutlined } from "@ant-design/icons";
 import { useAuth } from "../Context/AuthContext";
 import AppHeader from "../Header/AppHeader";
+import ReviewModal from "./ReviewModal"; // Import the ReviewModal component
 
 const ContentPerformance = () => {
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isRedditLinked, setIsRedditLinked] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedContent, setSelectedContent] = useState({ title: '', response: '' });
   const { api } = useAuth();
 
   const checkRedditLinkStatus = async () => {
@@ -48,27 +51,55 @@ const ContentPerformance = () => {
     }
   };
 
-  const handlePostToReddit = async (contentId) => {
+  const handlePostToReddit = (contentId, title, response) => {
     setLoading(true);
-    try {
-      await api.post(`/post-to-reddit/${contentId}`);
-      message.success("Content posted to Reddit successfully");
-      fetchContent();
-    } catch (error) {
-      if (error.response && error.response.status === 400) {
-        message.error(
-          "Reddit account not linked. Please link your account first."
-        );
-      } else {
-        message.error("Failed to post content to Reddit");
-      }
-    } finally {
-      setLoading(false);
-    }
+    api.post(`/post-to-reddit/${contentId}`, { title, response })
+      .then(() => {
+        message.success("Content posted to Reddit successfully");
+        fetchContent();
+      })
+      .catch(error => {
+        if (error.response && error.response.status === 400) {
+          message.error("Reddit account not linked. Please link your account first.");
+        } else {
+          message.error("Failed to post content to Reddit");
+        }
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+  
+  const showModal = (record) => {
+    console.log("Selected Record:", record);  // Debugging line
+    setSelectedContent({ _id: record._id, title: record.title, response: record.response });
+    setIsModalVisible(true);
+};
+ 
+const handleModalConfirm = (updatedTitle, updatedResponse) => {
+  const contentId = selectedContent._id;  
+  setIsModalVisible(false);
+
+  if (updatedTitle !== selectedContent.title || updatedResponse !== selectedContent.response) {
+      // If the content was modified, update it in the database first
+      api.put(`/update-content/${contentId}`, { title: updatedTitle, response: updatedResponse })
+          .then(() => {
+              handlePostToReddit(contentId, updatedTitle, updatedResponse);
+          })
+          .catch(error => {
+              message.error("Failed to update content");
+              console.error("Error updating content:", error);
+          });
+  } else {
+      handlePostToReddit(contentId, updatedTitle, updatedResponse);
+  }
+};
+
+  const handleModalCancel = () => {
+    setIsModalVisible(false);
   };
 
   const renderValue = (value) => value || "—";
-
   const renderValueNumber = (value) => value || 0;
 
   const columns = [
@@ -211,7 +242,7 @@ const ContentPerformance = () => {
       key: "action",
       render: (_, record) => (
         <Button
-          onClick={() => handlePostToReddit(record._id)}
+          onClick={() => showModal(record)}
           disabled={record.redditMetrics?.postId}
         >
           {record.redditMetrics?.postId ? "Posted" : "Post to Reddit"}
@@ -249,6 +280,14 @@ const ContentPerformance = () => {
           scroll={{ x: "max-content" }}
         />
       </div>
+
+      <ReviewModal
+        visible={isModalVisible}
+        title={selectedContent.title}
+        response={selectedContent.response}
+        onConfirm={handleModalConfirm}
+        onCancel={handleModalCancel}
+      />
     </>
   );
 };

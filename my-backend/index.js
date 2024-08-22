@@ -614,12 +614,36 @@ app.post("/api/reddit-callback", authenticate, async (req, res) => {
   }
 });
 
+app.put("/api/update-content/:id", authenticate, async (req, res) => {
+  const { id } = req.params;
+  const { title, response } = req.body;
+
+  try {
+      const content = await GeneratedContent.findOne({ _id: id, userId: req.userId });
+      if (!content) {
+          return res.status(404).json({ message: "Content not found" });
+      }
+
+      // Update the content title and response
+      content.title = title;
+      content.response = response;
+
+      // Save the updated content in the database
+      await content.save();
+
+      res.status(200).json({ message: "Content updated successfully" });
+  } catch (error) {
+      res.status(500).json({ message: "Error updating content", error: error.message });
+  }
+});
+
 app.post("/api/post-to-reddit/:id", authenticate, async (req, res) => {
   const { id } = req.params;
+  const { title, response } = req.body;
 
   try {
     console.log(`Attempting to post content with ID: ${id}`);
-    const content = await GeneratedContent.findOne({
+    let content = await GeneratedContent.findOne({
       _id: id,
       userId: req.userId,
     });
@@ -627,6 +651,11 @@ app.post("/api/post-to-reddit/:id", authenticate, async (req, res) => {
       console.log("Content not found");
       return res.status(404).json({ message: "Content not found" });
     }
+
+    // Ensure the content in the database matches the updated content from the request
+    content.title = title || content.title;
+    content.response = response || content.response;
+    await content.save();
 
     const user = await User.findById(req.userId);
     if (!user.redditRefreshToken) {
@@ -735,6 +764,9 @@ app.post("/api/post-to-reddit/:id", authenticate, async (req, res) => {
     });
   }
 });
+
+
+
 
 async function updateRedditMetrics() {
   console.log("Updating Reddit metrics...");
