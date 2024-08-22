@@ -167,7 +167,7 @@ const Favourites = () => {
               </Paragraph>
             </>
           )}
-          <Space>
+          <Space className="prmptbtn">
             <Button
               type="primary"
               danger
@@ -240,7 +240,7 @@ const Favourites = () => {
           onCancel={handleModalClose}
           footer={
             selectedItem && (
-              <div style={{ display: "flex", justifyContent: "flex-start" }}>
+              <div className="prmptbtn" style={{ display: "flex", justifyContent: "flex-start" }}>
                 <Button
                   type="primary"
                   danger

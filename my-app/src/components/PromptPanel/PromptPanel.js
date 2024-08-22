@@ -232,7 +232,7 @@ const PromptPanel = ({
         data-tutorial="prompt"
         disabled={isTutorialActive && tutorialStep !== 2}
       />
-      <Space style={{ marginTop: "16px" }}>
+      <Space style={{ marginTop: "16px" }} className="prmptbtn">
         <Button
           type="primary"
           onClick={handleSubmit}
