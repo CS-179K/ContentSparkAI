@@ -12,7 +12,6 @@ const { body, validationResult } = require("express-validator");
 const snoowrap = require("snoowrap");
 const axios = require("axios");
 
-
 const app = express();
 const port = process.env.PORT || 5005;
 
@@ -301,9 +300,7 @@ const filterValidationRules = [
     .isArray()
     .customSanitizer((value) =>
       Array.isArray(value)
-        ? value.map((item) =>
-            typeof item === "string" ? item.trim() : item
-          )
+        ? value.map((item) => (typeof item === "string" ? item.trim() : item))
         : []
     ),
   body("gender").trim().escape(),
@@ -314,9 +311,7 @@ const filterValidationRules = [
     .isArray()
     .customSanitizer((value) =>
       Array.isArray(value)
-        ? value.map((item) =>
-            typeof item === "string" ? item.trim() : item
-          )
+        ? value.map((item) => (typeof item === "string" ? item.trim() : item))
         : []
     ),
   body("contentGoal").trim().escape(),
@@ -449,7 +444,6 @@ app.post(
     }
   }
 );
-
 
 app.get("/api/update-reddit-metrics", async (req, res) => {
   try {
@@ -831,12 +825,29 @@ async function updateRedditMetrics() {
 // Run the update job every minute
 //cron.schedule("*/2 * * * *", updateRedditMetrics);
 
-// Custom Error Handling Middleware
-app.use((err, req, res, next) => {
+// HTTPS redirection middleware
+app.use((req, res, next) => {
   if (process.env.NODE_ENV === "production" && !req.secure) {
     return res.redirect("https://" + req.headers.host + req.url);
   }
   next();
+});
+
+// Sanitize user inputs
+app.use((req, res, next) => {
+  // Sanitize req.body
+  if (req.body) {
+    for (let key in req.body) {
+      if (typeof req.body[key] === 'string') {
+        req.body[key] = req.body[key].replace(/[<>]/g, '');
+      }
+    }
+  }
+  next();
+});
+
+// Error handling middleware (should be last)
+app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send({ error: "Something went wrong!" });
 });

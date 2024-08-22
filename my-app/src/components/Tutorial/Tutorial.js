@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "antd";
 
-const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
+const Tutorial = ({
+  isFirstTimeUser,
+  onComplete,
+  currentStep,
+  onNext,
+  onPrevious,
+}) => {
   const [visible, setVisible] = useState(isFirstTimeUser);
   const popupRef = useRef(null);
 
@@ -35,7 +41,7 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
       content:
         "Great job! Your content has been generated. Take a look at the result. If you're happy with it, you can click the <b>'Save content to favourite'</b> button to save it for future reference.",
       position: "left",
-      additionalHighlight: '[data-tutorial="generated-content"]'
+      additionalHighlight: '[data-tutorial="generated-content"]',
     },
     {
       target: '[data-tutorial="save-filters"]',
@@ -70,7 +76,9 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
         targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
         highlightElement(targetElement);
         if (steps[currentStep].additionalHighlight) {
-          const additionalElement = document.querySelector(steps[currentStep].additionalHighlight);
+          const additionalElement = document.querySelector(
+            steps[currentStep].additionalHighlight
+          );
           if (additionalElement) {
             highlightElement(additionalElement);
           }
@@ -123,14 +131,20 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
       switch (position) {
         case "right":
           popupRef.current.style.left = `${rect.right + 20}px`;
-          popupRef.current.style.top = `${rect.top + rect.height / 2 - popupRect.height / 2}px`;
+          popupRef.current.style.top = `${
+            rect.top + rect.height / 2 - popupRect.height / 2
+          }px`;
           break;
         case "left":
           popupRef.current.style.left = `${rect.left - popupRect.width - 20}px`;
-          popupRef.current.style.top = `${rect.top + rect.height / 2 - popupRect.height / 2}px`;
+          popupRef.current.style.top = `${
+            rect.top + rect.height / 2 - popupRect.height / 2
+          }px`;
           break;
         case "bottom":
-          popupRef.current.style.left = `${rect.left + rect.width / 2 - popupRect.width / 2}px`;
+          popupRef.current.style.left = `${
+            rect.left + rect.width / 2 - popupRect.width / 2
+          }px`;
           popupRef.current.style.top = `${rect.bottom + 20}px`;
           break;
         default:
@@ -149,15 +163,30 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
     const currentElement = document.querySelector(steps[currentStep].target);
     if (currentElement) unhighlightElement(currentElement);
     if (steps[currentStep].additionalHighlight) {
-      const additionalElement = document.querySelector(steps[currentStep].additionalHighlight);
+      const additionalElement = document.querySelector(
+        steps[currentStep].additionalHighlight
+      );
       if (additionalElement) unhighlightElement(additionalElement);
     }
-  
+
     if (currentStep === steps.length - 1) {
       handleSkip();
     } else {
       onNext();
     }
+  };
+
+  const handlePrevious = () => {
+    const currentElement = document.querySelector(steps[currentStep].target);
+    if (currentElement) unhighlightElement(currentElement);
+    if (steps[currentStep].additionalHighlight) {
+      const additionalElement = document.querySelector(
+        steps[currentStep].additionalHighlight
+      );
+      if (additionalElement) unhighlightElement(additionalElement);
+    }
+
+    onPrevious();
   };
 
   if (!visible) return null;
@@ -175,16 +204,31 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
         <p
           dangerouslySetInnerHTML={{ __html: steps[currentStep]?.content }}
         ></p>
-        {currentStep < 8 && (
-        <Button type="primary" onClick={handleSkip} style={{ marginRight: '10px' }}>
-          Skip Tutorial
-        </Button>
-        )}
-        {currentStep >= 4 && (
-          <Button type="primary" onClick={handleNext}>
-            {currentStep === steps.length - 1 ? "Done" : "Next"}
-          </Button>
-        )}
+        <div className="tutorial-buttons">
+          {currentStep > 0 && (
+            <Button
+              type="primary"
+              onClick={handlePrevious}
+              style={{ marginRight: "10px" }}
+            >
+              Previous
+            </Button>
+          )}
+          {currentStep < 8 && (
+            <Button
+              type="primary"
+              onClick={handleSkip}
+              style={{ marginRight: "10px" }}
+            >
+              Skip Tutorial
+            </Button>
+          )}
+          {currentStep >= 4 && (
+            <Button type="primary" onClick={handleNext}>
+              {currentStep === steps.length - 1 ? "Done" : "Next"}
+            </Button>
+          )}
+        </div>
       </div>
       <style jsx>{`
         .tutorial-overlay .main-overlay {
@@ -203,7 +247,7 @@ const Tutorial = ({ isFirstTimeUser, onComplete, currentStep, onNext }) => {
           padding: 20px;
           border-radius: 8px;
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          max-width: 300px;
+          max-width: 400px;
           pointer-events: auto;
           z-index: 9999;
           position: fixed;

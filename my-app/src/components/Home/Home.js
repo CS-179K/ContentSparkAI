@@ -10,11 +10,21 @@ const Home = () => {
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [isTutorialActive, setIsTutorialActive] = useState(false);
+  const [isTutorialEnabled, setIsTutorialEnabled] = useState(true);
 
   useEffect(() => {
     const tutorialCompleted = localStorage.getItem("tutorialCompleted");
     setIsFirstTimeUser(!tutorialCompleted);
     setIsTutorialActive(!tutorialCompleted);
+
+    const checkScreenSize = () => {
+      setIsTutorialEnabled(window.innerWidth > 767);
+    };
+
+    checkScreenSize();
+    window.addEventListener("resize", checkScreenSize);
+
+    return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
   const handleSaveFilters = async (filters) => {
@@ -34,15 +44,20 @@ const Home = () => {
     setTutorialStep((prevStep) => prevStep + 1);
   };
 
+  const handleTutorialPrevious = () => {
+    setTutorialStep((prevStep) => Math.max(0, prevStep - 1));
+  };
+
   return (
     <>
-      <AppHeader isTutorialActive={isTutorialActive} />
+      <AppHeader isTutorialActive={isTutorialActive && isTutorialEnabled} />
       <Row
         gutter={16}
         style={{
           padding: "20px",
           placeItems: "flex-start",
         }}
+        className="home-pg-container"
       >
         <Col span={12}>
           <FilterForm
@@ -50,7 +65,7 @@ const Home = () => {
             onChange={handleSaveFilters}
             onStepComplete={handleTutorialNext}
             tutorialStep={tutorialStep}
-            isTutorialActive={isTutorialActive}
+            isTutorialActive={isTutorialActive && isTutorialEnabled}
           />
         </Col>
         <Col span={12}>
@@ -58,15 +73,16 @@ const Home = () => {
             filters={savedFilters}
             onStepComplete={handleTutorialNext}
             tutorialStep={tutorialStep}
-            isTutorialActive={isTutorialActive}
+            isTutorialActive={isTutorialActive && isTutorialEnabled}
           />
         </Col>
       </Row>
-      {isTutorialActive && (
+      {isTutorialActive && isTutorialEnabled && (
         <Tutorial
           isFirstTimeUser={isFirstTimeUser}
           onComplete={handleTutorialComplete}
           onNext={handleTutorialNext}
+          onPrevious={handleTutorialPrevious}
           currentStep={tutorialStep}
         />
       )}
