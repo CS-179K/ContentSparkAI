@@ -128,16 +128,16 @@ const History = () => {
     return sortedHistory.filter((item) => {
       const searchLower = searchTerm.toLowerCase();
       return (
-        item.title.toLowerCase().includes(searchLower) ||
-        item.prompt.toLowerCase().includes(searchLower) ||
-        item.response.toLowerCase().includes(searchLower) ||
+        (item.title && item.title.toLowerCase().includes(searchLower)) ||
+        (item.prompt && item.prompt.toLowerCase().includes(searchLower)) ||
+        (item.response && item.response.toLowerCase().includes(searchLower)) ||
         Object.values(item.filters).some((value) =>
-          String(value).toLowerCase().includes(searchLower)
+          String(value || "").toLowerCase().includes(searchLower)
         )
       );
     });
   }, [sortedHistory, searchTerm]);
-
+  
   const Row = ({ index, style }) => {
     const item = filteredAndSortedHistory[index];
     return (
