@@ -833,6 +833,19 @@ app.use((req, res, next) => {
   next();
 });
 
+// Sanitize user inputs
+app.use((req, res, next) => {
+  // Sanitize req.body
+  if (req.body) {
+    for (let key in req.body) {
+      if (typeof req.body[key] === 'string') {
+        req.body[key] = req.body[key].replace(/[<>]/g, '');
+      }
+    }
+  }
+  next();
+});
+
 // Error handling middleware (should be last)
 app.use((err, req, res, next) => {
   console.error(err.stack);
