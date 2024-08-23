@@ -144,6 +144,9 @@ const Favourites = () => {
     const item = filteredAndSortedFavourites[index];
     const isFilter = !item.prompt;
 
+    // Format the updatedAt timestamp using native JavaScript Date
+    const formattedUpdatedAt = new Date(item.updatedAt).toLocaleString();
+
     return (
       <div
         style={{ ...style, borderBottom: "1px solid #303030", padding: "16px" }}
@@ -162,6 +165,9 @@ const Favourites = () => {
               <Paragraph ellipsis={{ rows: 1, expandable: false }}>
                 <Text>Industry: {item.industry}</Text>
               </Paragraph>
+              <Paragraph ellipsis={{ rows: 1, expandable: false }}>
+                <Text type="secondary">Saved at: {formattedUpdatedAt}</Text>
+              </Paragraph>
             </>
           ) : (
             <>
@@ -170,6 +176,9 @@ const Favourites = () => {
               </Paragraph>
               <Paragraph ellipsis={{ rows: 2, expandable: false }}>
                 <Text strong>Response:</Text> {decodeHTMLEntities(item.response)}
+              </Paragraph>
+              <Paragraph ellipsis={{ rows: 1, expandable: false }}>
+                <Text type="secondary">Saved at: {formattedUpdatedAt}</Text>
               </Paragraph>
             </>
           )}
@@ -226,7 +235,7 @@ const Favourites = () => {
           <List
             height={window.innerHeight - 200}
             itemCount={filteredAndSortedFavourites.length}
-            itemSize={264}
+            itemSize={311}
             width="100%"
           >
             {Row}
@@ -282,6 +291,11 @@ const Favourites = () => {
               <Title level={2}>
                 {decodeHTMLEntities(selectedItem.title) || selectedItem.contentType}
               </Title>
+              <Paragraph>
+                <Text type="secondary">
+                  Saved at: {new Date(selectedItem.updatedAt).toLocaleString()}
+                </Text>
+              </Paragraph>
               <Table
                 columns={columns}
                 dataSource={Object.entries(selectedItem.filters || selectedItem)

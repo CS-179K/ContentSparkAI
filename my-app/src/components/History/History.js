@@ -140,6 +140,10 @@ const History = () => {
 
   const Row = ({ index, style }) => {
     const item = filteredAndSortedHistory[index];
+
+    // Format the createdAt timestamp using native JavaScript Date
+    const formattedTimestamp = new Date(item.createdAt).toLocaleString();
+
     return (
       <div
         style={{ ...style, borderBottom: "1px solid #303030", padding: "16px" }}
@@ -151,6 +155,9 @@ const History = () => {
         >
           <Paragraph ellipsis={{ rows: 1, expandable: false }}>
             <Title level={2}>{decodeHTMLEntities(item.title)}</Title>
+          </Paragraph>
+          <Paragraph>
+            <Text type="secondary">Created at: {formattedTimestamp}</Text>
           </Paragraph>
           <Paragraph ellipsis={{ rows: 2, expandable: false }}>
             <Text strong>Response:</Text> {decodeHTMLEntities(item.response)}
@@ -212,7 +219,7 @@ const History = () => {
           <List
             height={window.innerHeight - 200}
             itemCount={filteredAndSortedHistory.length}
-            itemSize={264}
+            itemSize={311}
             width="100%"
           >
             {Row}
@@ -263,6 +270,12 @@ const History = () => {
           {selectedItem && (
             <>
               <Title level={2}>{decodeHTMLEntities(selectedItem.title)}</Title>
+              {/* Display the createdAt timestamp in the modal */}
+              <Paragraph>
+                <Text type="secondary">
+                  Created at: {new Date(selectedItem.createdAt).toLocaleString()}
+                </Text>
+              </Paragraph>
               <Table
                 columns={columns}
                 dataSource={Object.entries(selectedItem.filters)
