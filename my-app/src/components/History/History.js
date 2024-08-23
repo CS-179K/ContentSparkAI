@@ -155,7 +155,7 @@ const History = () => {
           <Paragraph ellipsis={{ rows: 2, expandable: false }}>
             <Text strong>Response:</Text> {item.response}
           </Paragraph>
-          <Space>
+          <Space className="prmptbtn">
             <Button
               type="primary"
               icon={<StarOutlined />}
@@ -226,7 +226,7 @@ const History = () => {
           onCancel={handleModalClose}
           footer={
             selectedItem && (
-              <div style={{ display: "flex", justifyContent: "flex-start" }}>
+              <div className="prmptbtn" style={{ display: "flex", justifyContent: "flex-start" }}>
                 <Button
                   type="primary"
                   icon={<StarOutlined />}

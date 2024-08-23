@@ -33,6 +33,10 @@ const ContentPerformance = () => {
   const fetchContent = async () => {
     setLoading(true);
     try {
+      // Call the API to update Reddit metrics
+      await api.get("/update-reddit-metrics");
+  
+      // Once metrics are updated, fetch the updated content
       const response = await api.get("/get-history");
       setContent(response.data);
     } catch (error) {
@@ -41,6 +45,7 @@ const ContentPerformance = () => {
       setLoading(false);
     }
   };
+  
 
   const handleLinkReddit = async () => {
     try {
@@ -250,6 +255,7 @@ const handleModalConfirm = (updatedTitle, updatedResponse) => {
       render: (_, record) => (
         <Button
           onClick={() => showModal(record)}
+
           disabled={record.redditMetrics?.postId}
         >
           {record.redditMetrics?.postId ? "Posted" : "Post to Reddit"}
