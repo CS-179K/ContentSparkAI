@@ -720,25 +720,18 @@ try {
       content.UpdatedAtReddit = new Date(); // Set the UpdatedAtReddit field
     
       await content.save();
-      console.log("Content updated with Reddit metrics");
-
-      res.status(200).json({
-        message: "Content posted to Reddit successfully",
-        redditMetrics: content.redditMetrics,
-      });
     } catch (error) {
-      console.error("Error submitting post:", error);
-      return res.status(500).json({
-        message: "Failed to post content to Reddit",
-        error: error.message,
-      });
+      console.error("Error during Reddit post submission:", error);
+      res.status(500).json({ message: "Failed to post content to Reddit", error: error.message });
     }
-  } catch (error) {
-    console.error("Unexpected error in post-to-reddit endpoint:", error);
-    res.status(500).json({
-      message: "Failed to post content to Reddit",
-      error: error.message,
+    
+    res.status(200).json({
+      message: "Content posted to Reddit successfully",
+      redditMetrics: content.redditMetrics,
+      UpdatedAtReddit: content.UpdatedAtReddit, // Send the UpdatedAtReddit date
     });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to post content to Reddit", error: error.message });
   }
 });
 
