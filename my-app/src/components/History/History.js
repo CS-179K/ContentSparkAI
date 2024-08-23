@@ -154,13 +154,13 @@ const History = () => {
           style={{ width: "100%", cursor: "pointer" }}
         >
           <Paragraph ellipsis={{ rows: 1, expandable: false }}>
-            <Title level={2}>{item.title}</Title>
+            <Title level={2}>{decodeHTMLEntities(item.title)}</Title>
           </Paragraph>
           <Paragraph>
             <Text type="secondary">Created at: {formattedTimestamp}</Text>
           </Paragraph>
           <Paragraph ellipsis={{ rows: 2, expandable: false }}>
-            <Text strong>Response:</Text> {item.response}
+            <Text strong>Response:</Text> {decodeHTMLEntities(item.response)}
           </Paragraph>
           <Space className="prmptbtn">
             <Button
@@ -190,6 +190,12 @@ const History = () => {
     );
   };
 
+  const decodeHTMLEntities = (str) => {
+    const parser = new DOMParser();
+    const decodedString = parser.parseFromString(str, 'text/html').documentElement.textContent;
+    return decodedString;
+  }
+
   return (
     <>
       <AppHeader />
@@ -213,7 +219,7 @@ const History = () => {
           <List
             height={window.innerHeight - 200}
             itemCount={filteredAndSortedHistory.length}
-            itemSize={264}
+            itemSize={311}
             width="100%"
           >
             {Row}
@@ -263,7 +269,7 @@ const History = () => {
         >
           {selectedItem && (
             <>
-              <Title level={2}>{selectedItem.title}</Title>
+              <Title level={2}>{decodeHTMLEntities(selectedItem.title)}</Title>
               {/* Display the createdAt timestamp in the modal */}
               <Paragraph>
                 <Text type="secondary">

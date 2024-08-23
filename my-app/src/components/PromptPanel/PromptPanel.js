@@ -64,6 +64,10 @@ const PromptPanel = ({
     selectedFilters,
     selectedPreviousContent
   ) => {
+    if (!(selectedFilters.contentType && selectedFilters.industry)) {
+      message.error("Select both content Type and Industry from filters");
+      return;
+    }
     let fullPrompt = `
       You are an expert content creator specializing in ${
         selectedFilters.contentType || "various types of content"
@@ -146,23 +150,25 @@ const PromptPanel = ({
         selectedFilters,
         selectedPreviousContent
       );
-      const start = performance.now();
-      const result = await model.generateContent(fullPrompt);
-      console.log("API time: " + (performance.now() - start) / 1000);
-      const generatedText = result.response.text();
-      setResponse(generatedText);
-      const title = await generateTitle(prompt, generatedText);
-      const savedContent = await api.post("/save-content", {
-        filters: selectedFilters,
-        prompt,
-        response: generatedText,
-        title,
-      });
+      if (fullPrompt) {
+        const start = performance.now();
+        const result = await model.generateContent(fullPrompt);
+        console.log("API time: " + (performance.now() - start) / 1000);
+        const generatedText = result.response.text();
+        setResponse(generatedText);
+        const title = await generateTitle(prompt, generatedText);
+        const savedContent = await api.post("/save-content", {
+          filters: selectedFilters,
+          prompt,
+          response: generatedText,
+          title,
+        });
 
-      setLastGeneratedContentId(savedContent.data._id);
-      fetchPreviousContent(); // Refresh the content list
-      if (isTutorialActive) {
-        onStepComplete();
+        setLastGeneratedContentId(savedContent.data._id);
+        fetchPreviousContent(); // Refresh the content list
+        if (isTutorialActive) {
+          onStepComplete();
+        }
       }
     } catch (error) {
       message.error(error.response?.data?.message ?? "An error occurred");

@@ -4,11 +4,14 @@ import moment from "moment";
 import { RedditOutlined } from "@ant-design/icons";
 import { useAuth } from "../Context/AuthContext";
 import AppHeader from "../Header/AppHeader";
+import ReviewModal from "./ReviewModal"; // Import the ReviewModal component
 
 const ContentPerformance = () => {
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isRedditLinked, setIsRedditLinked] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedContent, setSelectedContent] = useState({ title: '', response: '' });
   const { api } = useAuth();
 
   const checkRedditLinkStatus = async () => {
@@ -71,9 +74,37 @@ const ContentPerformance = () => {
       setLoading(false);
     }
   };
+  
+  const showModal = (record) => {
+    console.log("Selected Record:", record);  // Debugging line
+    setSelectedContent({ _id: record._id, title: record.title, response: record.response });
+    setIsModalVisible(true);
+};
+ 
+const handleModalConfirm = (updatedTitle, updatedResponse) => {
+  const contentId = selectedContent._id;  
+  setIsModalVisible(false);
+
+  if (updatedTitle !== selectedContent.title || updatedResponse !== selectedContent.response) {
+      // If the content was modified, update it in the database first
+      api.put(`/update-content/${contentId}`, { title: updatedTitle, response: updatedResponse })
+          .then(() => {
+              handlePostToReddit(contentId, updatedTitle, updatedResponse);
+          })
+          .catch(error => {
+              message.error("Failed to update content");
+              console.error("Error updating content:", error);
+          });
+  } else {
+      handlePostToReddit(contentId, updatedTitle, updatedResponse);
+  }
+};
+
+  const handleModalCancel = () => {
+    setIsModalVisible(false);
+  };
 
   const renderValue = (value) => value || "—";
-
   const renderValueNumber = (value) => value || 0;
 
   const columns = [
@@ -91,6 +122,13 @@ const ContentPerformance = () => {
       sorter: (a, b) => moment(a.createdAt).unix() - moment(b.createdAt).unix(),
       render: (value) =>
         value ? moment(value).format("YYYY-MM-DD HH:mm:ss") : "—",
+    },
+    {
+      title: "Posted At Reddit", // New column for UpdatedAtReddit
+      dataIndex: "UpdatedAtReddit",
+      key: "UpdatedAtReddit",
+      sorter: (a, b) => moment(a.UpdatedAtReddit).unix() - moment(b.UpdatedAtReddit).unix(),
+      render: (value) => value ? moment(value).format("YYYY-MM-DD HH:mm:ss") : "—",
     },
     {
       title: "Upvotes",
@@ -216,8 +254,8 @@ const ContentPerformance = () => {
       key: "action",
       render: (_, record) => (
         <Button
+          onClick={() => showModal(record)}
           type="primary"
-          onClick={() => handlePostToReddit(record._id)}
           disabled={record.redditMetrics?.postId}
         >
           {record.redditMetrics?.postId ? "Posted" : "Post to Reddit"}
@@ -255,6 +293,14 @@ const ContentPerformance = () => {
           scroll={{ x: "max-content" }}
         />
       </div>
+
+      <ReviewModal
+        visible={isModalVisible}
+        title={selectedContent.title}
+        response={selectedContent.response}
+        onConfirm={handleModalConfirm}
+        onCancel={handleModalCancel}
+      />
     </>
   );
 };

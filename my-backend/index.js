@@ -147,6 +147,7 @@ const contentSchema = new mongoose.Schema(
       comments: { type: Number, default: 0 },
       lastUpdated: Date,
     },
+    UpdatedAtReddit: Date, // New field to track when content was last updated on Reddit
   },
   { timestamps: true }
 ); // This adds createdAt and updatedAt fields
@@ -619,8 +620,42 @@ app.post("/api/reddit-callback", authenticate, async (req, res) => {
   }
 });
 
+app.put("/api/update-content/:id", authenticate, async (req, res) => {
+  const { id } = req.params;
+  const { title, response } = req.body;
+
+  try {
+    const content = await GeneratedContent.findOne({
+      _id: id,
+      userId: req.userId,
+    });
+    if (!content) {
+      return res.status(404).json({ message: "Content not found" });
+    }
+
+    // Update the content title and response
+    content.title = title;
+    content.response = response;
+
+    // Save the updated content in the database
+    await content.save();
+
+    console.log("Content updated successfully");
+    res.status(200).json({ message: "Content updated successfully" });
+  } catch (error) {
+    console.error(
+      "Error updating content",
+      error.response?.data || error.message
+    );
+    res
+      .status(500)
+      .json({ message: "Error updating content", error: error.message });
+  }
+});
+
 app.post("/api/post-to-reddit/:id", authenticate, async (req, res) => {
   const { id } = req.params;
+  const { title, response } = req.body;
 
   try {
     console.log(`Attempting to post content with ID: ${id}`);
@@ -632,6 +667,10 @@ app.post("/api/post-to-reddit/:id", authenticate, async (req, res) => {
       console.log("Content not found");
       return res.status(404).json({ message: "Content not found" });
     }
+
+    // Update content title and response if modified
+    content.title = title || content.title;
+    content.response = response || content.response;
 
     const user = await User.findById(req.userId);
     if (!user.redditRefreshToken) {
@@ -717,6 +756,8 @@ app.post("/api/post-to-reddit/:id", authenticate, async (req, res) => {
           lastUpdated: new Date(),
         };
       }
+
+      content.UpdatedAtReddit = new Date(); // Set the UpdatedAtReddit field
 
       await content.save();
       console.log("Content updated with Reddit metrics");
@@ -838,8 +879,8 @@ app.use((req, res, next) => {
   // Sanitize req.body
   if (req.body) {
     for (let key in req.body) {
-      if (typeof req.body[key] === 'string') {
-        req.body[key] = req.body[key].replace(/[<>]/g, '');
+      if (typeof req.body[key] === "string") {
+        req.body[key] = req.body[key].replace(/[<>]/g, "");
       }
     }
   }

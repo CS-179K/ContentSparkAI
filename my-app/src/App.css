@@ -22,7 +22,8 @@ body {
 /*History*/
 .hstry-container .ant-input,
 .fav-container .ant-input,
-.fltr-save .ant-input {
+.fltr-save .ant-input,
+.rdt-mdl .ant-input {
   border: 1px solid #424242 !important;
   background: #141414 !important;
   color: #ffffff !important;
