@@ -152,7 +152,6 @@ const contentSchema = new mongoose.Schema(
   { timestamps: true }
 ); // This adds createdAt and updatedAt fields
 
-
 const GeneratedContent = mongoose.model("GeneratedContent", contentSchema);
 // Define Filter Schema and Model
 const filterSchema = new mongoose.Schema(
@@ -626,21 +625,31 @@ app.put("/api/update-content/:id", authenticate, async (req, res) => {
   const { title, response } = req.body;
 
   try {
-      const content = await GeneratedContent.findOne({ _id: id, userId: req.userId });
-      if (!content) {
-          return res.status(404).json({ message: "Content not found" });
-      }
+    const content = await GeneratedContent.findOne({
+      _id: id,
+      userId: req.userId,
+    });
+    if (!content) {
+      return res.status(404).json({ message: "Content not found" });
+    }
 
-      // Update the content title and response
-      content.title = title;
-      content.response = response;
+    // Update the content title and response
+    content.title = title;
+    content.response = response;
 
-      // Save the updated content in the database
-      await content.save();
+    // Save the updated content in the database
+    await content.save();
 
-      res.status(200).json({ message: "Content updated successfully" });
+    console.log("Content updated successfully");
+    res.status(200).json({ message: "Content updated successfully" });
   } catch (error) {
-      res.status(500).json({ message: "Error updating content", error: error.message });
+    console.error(
+      "Error updating content",
+      error.response?.data || error.message
+    );
+    res
+      .status(500)
+      .json({ message: "Error updating content", error: error.message });
   }
 });
 
@@ -747,8 +756,9 @@ app.post("/api/post-to-reddit/:id", authenticate, async (req, res) => {
           lastUpdated: new Date(),
         };
       }
+
       content.UpdatedAtReddit = new Date(); // Set the UpdatedAtReddit field
-    
+
       await content.save();
       console.log("Content updated with Reddit metrics");
 
@@ -869,8 +879,8 @@ app.use((req, res, next) => {
   // Sanitize req.body
   if (req.body) {
     for (let key in req.body) {
-      if (typeof req.body[key] === 'string') {
-        req.body[key] = req.body[key].replace(/[<>]/g, '');
+      if (typeof req.body[key] === "string") {
+        req.body[key] = req.body[key].replace(/[<>]/g, "");
       }
     }
   }
