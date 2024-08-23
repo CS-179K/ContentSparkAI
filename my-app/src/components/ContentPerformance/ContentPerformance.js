@@ -51,23 +51,23 @@ const ContentPerformance = () => {
     }
   };
 
-  const handlePostToReddit = (contentId, title, response) => {
+  const handlePostToReddit = async (contentId) => {
     setLoading(true);
-    api.post(`/post-to-reddit/${contentId}`, { title, response })
-      .then(() => {
-        message.success("Content posted to Reddit successfully");
-        fetchContent();
-      })
-      .catch(error => {
-        if (error.response && error.response.status === 400) {
-          message.error("Reddit account not linked. Please link your account first.");
-        } else {
-          message.error("Failed to post content to Reddit");
-        }
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    try {
+      await api.post(`/post-to-reddit/${contentId}`);
+      message.success("Content posted to Reddit successfully");
+      fetchContent();
+    } catch (error) {
+      if (error.response && error.response.status === 400) {
+        message.error(
+          "Reddit account not linked. Please link your account first."
+        );
+      } else {
+        message.error("Failed to post content to Reddit");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
   
   const showModal = (record) => {

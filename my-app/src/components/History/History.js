@@ -137,7 +137,7 @@ const History = () => {
       );
     });
   }, [sortedHistory, searchTerm]);
-  
+
   const Row = ({ index, style }) => {
     const item = filteredAndSortedHistory[index];
     return (

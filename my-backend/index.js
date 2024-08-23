@@ -122,36 +122,6 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model("User", userSchema);
 
 // Define Content Schema and Model
-// const contentSchema = new mongoose.Schema(
-//   {
-//     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the user
-//     filters: {
-//       contentType: String,
-//       industry: String,
-//       ageRange: String,
-//       interests: [String],
-//       gender: String,
-//       incomeLevel: String,
-//       tone: String,
-//       themes: [String],
-//       contentGoal: String,
-//       maxContentLength: String,
-//       language: String,
-//     },
-//     prompt: String,
-//     response: String,
-//     title: String,
-//     isFavourite: { type: Boolean, default: false },
-//     redditMetrics: {
-//       postId: String,
-//       upvotes: { type: Number, default: 0 },
-//       comments: { type: Number, default: 0 },
-//       lastUpdated: Date,
-//     },
-//     UpdatedAtReddit: Date,
-//   },
-//   { timestamps: true }
-// ); // This adds createdAt and updatedAt fields
 const contentSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
