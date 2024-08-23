@@ -119,6 +119,13 @@ const handleModalConfirm = (updatedTitle, updatedResponse) => {
         value ? moment(value).format("YYYY-MM-DD HH:mm:ss") : "—",
     },
     {
+      title: "Updated At Reddit", // New column for UpdatedAtReddit
+      dataIndex: "UpdatedAtReddit",
+      key: "UpdatedAtReddit",
+      sorter: (a, b) => moment(a.UpdatedAtReddit).unix() - moment(b.UpdatedAtReddit).unix(),
+      render: (value) => value ? moment(value).format("YYYY-MM-DD HH:mm:ss") : "—",
+    },
+    {
       title: "Upvotes",
       dataIndex: ["redditMetrics", "upvotes"],
       key: "upvotes",
