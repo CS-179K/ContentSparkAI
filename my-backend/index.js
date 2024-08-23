@@ -649,12 +649,14 @@ app.post("/api/post-to-reddit/:id", authenticate, async (req, res) => {
   const { title, response } = req.body;
 
   try {
+    console.log(`Attempting to post content with ID: ${id}`);
     let content = await GeneratedContent.findOne({
       _id: id,
       userId: req.userId,
     });
 
     if (!content) {
+      console.log("Content not found");
       return res.status(404).json({ message: "Content not found" });
     }
 
@@ -664,74 +666,110 @@ app.post("/api/post-to-reddit/:id", authenticate, async (req, res) => {
 
     const user = await User.findById(req.userId);
     if (!user.redditRefreshToken) {
+      console.log("Reddit account not linked");
       return res.status(400).json({ message: "Reddit account not linked" });
     }
 
-    const tokenResponse = await axios.post(
-      "https://www.reddit.com/api/v1/access_token",
-      `grant_type=refresh_token&refresh_token=${user.redditRefreshToken}`,
-      {
-        auth: {
-          username: process.env.REDDIT_CLIENT_ID,
-          password: process.env.REDDIT_CLIENT_SECRET,
-        },
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
-    );
+    console.log("Refreshing Reddit access token");
+    let tokenResponse;
+    try {
+      tokenResponse = await axios.post(
+        "https://www.reddit.com/api/v1/access_token",
+        `grant_type=refresh_token&refresh_token=${user.redditRefreshToken}`,
+        {
+          auth: {
+            username: process.env.REDDIT_CLIENT_ID,
+            password: process.env.REDDIT_CLIENT_SECRET,
+          },
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+      console.log("Token refresh successful");
+    } catch (error) {
+      console.error(
+        "Error refreshing Reddit token:",
+        error.response?.data || error.message
+      );
+      return res
+        .status(401)
+        .json({ message: "Failed to refresh Reddit token" });
+    }
 
     const { access_token } = tokenResponse.data;
 
+    console.log("Initializing snoowrap");
     const r = new snoowrap({
       userAgent: process.env.REDDIT_USER_AGENT,
       accessToken: access_token,
     });
 
+    console.log("Getting Reddit user info");
     const me = await r.getMe();
+    console.log("Reddit user:", me.name);
+
+    console.log("Attempting to submit post");
+    let submission;
     try {
       const submission = await r.submitSelfpost({
-  subredditName: "u_" + me.name,
-  title: content.title,
-  text: content.response,
-});
+        subredditName: "u_" + me.name,
+        title: content.title,
+        text: content.response,
+      });
 
-const postId = submission.name;
+      const postId = submission.name;
+      console.log("Post submitted successfully:", postId);
 
-try {
-  const fullSubmission = await submission.fetch();
-  content.redditMetrics = {
-    postId: postId,
-    upvotes: fullSubmission.ups || 0,
-    comments: fullSubmission.num_comments || 0,
-    lastUpdated: new Date(),
-  };
-} catch (fetchError) {
-  console.warn("Unable to fetch full submission details:", fetchError.message);
-  content.redditMetrics = {
-    postId: postId,
-    upvotes: 0,
-    comments: 0,
-    lastUpdated: new Date(),
-  };
-}
-
-    
+      try {
+        const fullSubmission = await submission.fetch();
+        console.log(fullSubmission);
+        content.redditMetrics = {
+          postId: postId,
+          upvotes:
+            typeof fullSubmission.ups === "function"
+              ? await fullSubmission.ups()
+              : fullSubmission.ups || 0,
+          comments:
+            typeof fullSubmission.num_comments === "function"
+              ? await fullSubmission.num_comments()
+              : fullSubmission.num_comments || 0,
+          lastUpdated: new Date(),
+        };
+      } catch (fetchError) {
+        console.warn(
+          "Unable to fetch full submission details:",
+          fetchError.message
+        );
+        content.redditMetrics = {
+          postId: postId,
+          upvotes: 0,
+          comments: 0,
+          lastUpdated: new Date(),
+        };
+      }
       content.UpdatedAtReddit = new Date(); // Set the UpdatedAtReddit field
     
       await content.save();
+      console.log("Content updated with Reddit metrics");
+
+      res.status(200).json({
+        message: "Content posted to Reddit successfully",
+        redditMetrics: content.redditMetrics,
+      });
     } catch (error) {
-      console.error("Error during Reddit post submission:", error);
-      res.status(500).json({ message: "Failed to post content to Reddit", error: error.message });
+      console.error("Error submitting post:", error);
+      return res.status(500).json({
+        message: "Failed to post content to Reddit",
+        error: error.message,
+      });
     }
-    
-    res.status(200).json({
-      message: "Content posted to Reddit successfully",
-      redditMetrics: content.redditMetrics,
-      UpdatedAtReddit: content.UpdatedAtReddit, // Send the UpdatedAtReddit date
-    });
   } catch (error) {
-    res.status(500).json({ message: "Failed to post content to Reddit", error: error.message });
+    console.error("Unexpected error in post-to-reddit endpoint:", error);
+    res.status(500).json({
+      message: "Failed to post content to Reddit",
+      error: error.message,
+    });
   }
 });
 
