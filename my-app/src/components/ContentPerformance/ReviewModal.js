@@ -12,11 +12,12 @@ const ReviewModal = ({ visible, title, response, onConfirm, onCancel }) => {
 
     return (
         <Modal
+            className="rdt-mdl"
             title="Review"
             visible={visible}
             onCancel={onCancel}
             footer={[
-                <Button key="cancel" onClick={onCancel}>
+                <Button key="cancel" type="primary" danger onClick={onCancel}>
                     Cancel
                 </Button>,
                 <Button key="submit" type="primary" onClick={() => onConfirm(updatedTitle, updatedResponse)}>

@@ -134,6 +134,12 @@ const Favourites = () => {
     });
   }, [sortedFavourites, searchTerm]);
 
+  const decodeHTMLEntities = (str) => {
+    const parser = new DOMParser();
+    const decodedString = parser.parseFromString(str, 'text/html').documentElement.textContent;
+    return decodedString;
+  }
+
   const Row = ({ index, style }) => {
     const item = filteredAndSortedFavourites[index];
     const isFilter = !item.prompt;
@@ -149,7 +155,7 @@ const Favourites = () => {
         >
           {isFilter ? (
             <>
-              <Title level={2}>{item.title}</Title>
+              <Title level={2}>{decodeHTMLEntities(item.title)}</Title>
               <Paragraph ellipsis={{ rows: 1, expandable: false }}>
                 <Text>ContentType: {item.contentType}</Text>
               </Paragraph>
@@ -160,10 +166,10 @@ const Favourites = () => {
           ) : (
             <>
               <Paragraph ellipsis={{ rows: 1, expandable: false }}>
-                <Title level={2}>{item.title}</Title>
+                <Title level={2}>{decodeHTMLEntities(item.title)}</Title>
               </Paragraph>
               <Paragraph ellipsis={{ rows: 2, expandable: false }}>
-                <Text strong>Response:</Text> {item.response}
+                <Text strong>Response:</Text> {decodeHTMLEntities(item.response)}
               </Paragraph>
             </>
           )}
@@ -274,7 +280,7 @@ const Favourites = () => {
           {selectedItem && (
             <>
               <Title level={2}>
-                {selectedItem.title || selectedItem.contentType}
+                {decodeHTMLEntities(selectedItem.title) || selectedItem.contentType}
               </Title>
               <Table
                 columns={columns}

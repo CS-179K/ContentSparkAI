@@ -124,7 +124,7 @@ const handleModalConfirm = (updatedTitle, updatedResponse) => {
         value ? moment(value).format("YYYY-MM-DD HH:mm:ss") : "—",
     },
     {
-      title: "Updated At Reddit", // New column for UpdatedAtReddit
+      title: "Posted At Reddit", // New column for UpdatedAtReddit
       dataIndex: "UpdatedAtReddit",
       key: "UpdatedAtReddit",
       sorter: (a, b) => moment(a.UpdatedAtReddit).unix() - moment(b.UpdatedAtReddit).unix(),
@@ -255,7 +255,7 @@ const handleModalConfirm = (updatedTitle, updatedResponse) => {
       render: (_, record) => (
         <Button
           onClick={() => showModal(record)}
-
+          type="primary"
           disabled={record.redditMetrics?.postId}
         >
           {record.redditMetrics?.postId ? "Posted" : "Post to Reddit"}
