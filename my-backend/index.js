@@ -123,7 +123,7 @@ const User = mongoose.model("User", userSchema);
 // Define Content Schema and Model
 const contentSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the user
     filters: {
       contentType: String,
       industry: String,
@@ -150,7 +150,7 @@ const contentSchema = new mongoose.Schema(
     UpdatedAtReddit: Date, // New field to track when content was last updated on Reddit
   },
   { timestamps: true }
-);
+); // This adds createdAt and updatedAt fields
 
 
 const GeneratedContent = mongoose.model("GeneratedContent", contentSchema);
@@ -650,11 +650,10 @@ app.post("/api/post-to-reddit/:id", authenticate, async (req, res) => {
 
   try {
     console.log(`Attempting to post content with ID: ${id}`);
-    let content = await GeneratedContent.findOne({
+    const content = await GeneratedContent.findOne({
       _id: id,
       userId: req.userId,
     });
-
     if (!content) {
       console.log("Content not found");
       return res.status(404).json({ message: "Content not found" });
@@ -712,7 +711,7 @@ app.post("/api/post-to-reddit/:id", authenticate, async (req, res) => {
     console.log("Attempting to submit post");
     let submission;
     try {
-      const submission = await r.submitSelfpost({
+      submission = await r.submitSelfpost({
         subredditName: "u_" + me.name,
         title: content.title,
         text: content.response,
@@ -772,8 +771,6 @@ app.post("/api/post-to-reddit/:id", authenticate, async (req, res) => {
     });
   }
 });
-
-
 
 async function updateRedditMetrics() {
   console.log("Updating Reddit metrics...");
