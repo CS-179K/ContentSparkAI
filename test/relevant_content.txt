@@ -1,17 +1,16 @@
-Task 1: POC on figuring out how to generate relevant strategy (upload txt, pdf, tag based etc)
+Task 1: POC on figuring out how to generate relevant strategy
 Test cases:
-1. As a user, when I upload a text file containing my previous content, I expect the system to extract relevant information that I can use for generating new content.
-2. As a user, when I upload a PDF file with formatted text and images, I expect the system to successfully parse it and extract useful content for my future generations.
-3. As a user, when I input a series of tags related to my previous content, I expect the system to use these tags to inform and improve my content generation process.
+1. As a user, when I select a content type from the dropdown, I expect the system to apply this filter to the content generation process.
+2. As a user, when I choose an industry/category, I expect this selection to influence the generated content appropriately.
+3. As a user, when I specify audience demographics like age range, interests, and gender, I expect the generated content to be tailored to this audience.
 
 Task 2: Implementation of the upload strategy
 Test cases:
-1. As a user, when I upload a large PDF file (around 10MB), I expect the system to handle it smoothly without timing out or crashing.
-2. As a user, when I upload files with different text encodings (like UTF-8 or UTF-16), I expect the system to correctly extract and process the content regardless of the encoding.
-3. As a user, if I accidentally try to upload an unsupported file type, I expect to see a clear error message explaining which file types are accepted.
+1. As a user, when I input additional details in the prompt area, I expect the system to incorporate this information into the generated content.
+2. As a user, when I select multiple filters (e.g., content type, industry, tone, themes), I expect the system to combine these filters effectively in the content generation process.
+3. As a user, if I don't select certain optional filters, I expect the system to generate content without applying those specific filters.
 
 Task 3: UI Component
 Test cases:
-1. As a user, when I drag and drop a file into the upload area, I expect to see it successfully added to the system without any issues.
-2. As a user, when I select multiple files for upload, I expect all of them to be processed and added to my relevant content pool for future use.
-3. As a user, after uploading my files, I expect to see a summary of the extracted content or tags, with the option to edit or remove items before I proceed with content generation.
+1. As a user, I should be able to select mulyiple previous content to generate new content
+2. As a user, when I click the "Generate Content" button, I expect to see the AI-generated content displayed on the screen.
