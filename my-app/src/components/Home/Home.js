@@ -4,6 +4,7 @@ import FilterForm from "../Filter/FilterForm";
 import PromptPanel from "../PromptPanel/PromptPanel";
 import Tutorial from "../Tutorial/Tutorial";
 import AppHeader from "../Header/AppHeader";
+import { useAuth } from "../Context/AuthContext";
 
 const Home = () => {
   const [savedFilters, setSavedFilters] = useState({});
@@ -11,11 +12,23 @@ const Home = () => {
   const [tutorialStep, setTutorialStep] = useState(0);
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [isTutorialEnabled, setIsTutorialEnabled] = useState(true);
+  const { api, user } = useAuth();
 
   useEffect(() => {
-    const tutorialCompleted = localStorage.getItem("tutorialCompleted");
-    setIsFirstTimeUser(!tutorialCompleted);
-    setIsTutorialActive(!tutorialCompleted);
+    const checkTutorialStatus = async () => {
+      if (user) {
+        try {
+          const response = await api.get(`/user-tutorial-status`);
+          const tutorialCompleted = response.data.tutorialCompleted;
+          setIsFirstTimeUser(!tutorialCompleted);
+          setIsTutorialActive(!tutorialCompleted);
+        } catch (error) {
+          console.error("Error fetching tutorial status:", error);
+        }
+      }
+    };
+
+    checkTutorialStatus();
 
     const checkScreenSize = () => {
       setIsTutorialEnabled(window.innerWidth > 767);
@@ -34,10 +47,16 @@ const Home = () => {
     }));
   };
 
-  const handleTutorialComplete = () => {
+  const handleTutorialComplete = async () => {
     setIsFirstTimeUser(false);
     setIsTutorialActive(false);
-    localStorage.setItem("tutorialCompleted", "true");
+    if (user) {
+      try {
+        await api.post(`/complete-tutorial`);
+      } catch (error) {
+        console.error("Error marking tutorial as complete:", error);
+      }
+    }
   };
 
   const handleTutorialNext = () => {

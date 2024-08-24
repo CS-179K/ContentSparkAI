@@ -116,6 +116,7 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }, // Timestamp for when the user was created
   lastLogin: { type: Date, default: Date.now }, // Last login timestamp
   redditRefreshToken: String,
+  tutorialCompleted: { type: Boolean, default: false },
 });
 
 const User = mongoose.model("User", userSchema);
@@ -1045,6 +1046,39 @@ async function updateRedditMetrics() {
   }
   console.log("Finished updating Reddit metrics");
 }
+
+// Get user tutorial status
+app.get("/api/user-tutorial-status", authenticate, async (req, res) => {
+  try {
+    
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({ tutorialCompleted: user.tutorialCompleted || false });
+  } catch (error) {
+    console.error("Error fetching tutorial status:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Mark tutorial as complete
+app.post("/api/complete-tutorial", authenticate, async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { tutorialCompleted: true },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({ message: "Tutorial marked as complete" });
+  } catch (error) {
+    console.error("Error marking tutorial as complete:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 // Run the update job every minute
 //cron.schedule("*/2 * * * *", updateRedditMetrics);
