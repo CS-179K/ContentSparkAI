@@ -27,5 +27,9 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.4"
+  },
+  "overrides": {
+    "ws": "5.2.4",
+    "tough-cookie": "4.1.3"
   }
 }
