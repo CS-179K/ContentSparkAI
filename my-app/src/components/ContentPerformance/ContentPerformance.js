@@ -169,11 +169,11 @@ const ContentPerformance = () => {
         value ? moment(value).format("YYYY-MM-DD HH:mm:ss") : "—",
     },
     {
-      title: "Posted At Reddit", // New column for UpdatedAtReddit
-      dataIndex: "UpdatedAtReddit",
-      key: "UpdatedAtReddit",
+      title: "Updated on Reddit", // New column for lastUpdated
+      dataIndex: ["redditMetrics", "lastUpdated"],
+      key: "lastUpdated",
       sorter: (a, b) =>
-        moment(a.UpdatedAtReddit).unix() - moment(b.UpdatedAtReddit).unix(),
+        moment(a.redditMetrics?.lastUpdated).unix() - moment(b.redditMetrics?.lastUpdated).unix(),
       render: (value) =>
         value ? moment(value).format("YYYY-MM-DD HH:mm:ss") : "—",
     },

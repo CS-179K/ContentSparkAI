@@ -148,7 +148,6 @@ const contentSchema = new mongoose.Schema(
       comments: { type: Number, default: 0 },
       lastUpdated: Date,
     },
-    UpdatedAtReddit: Date, // New field to track when content was last updated on Reddit
   },
   { timestamps: true }
 ); // This adds createdAt and updatedAt fields
@@ -794,8 +793,6 @@ app.post("/api/post-to-reddit/:id", authenticate, async (req, res) => {
         };
       }
 
-      content.UpdatedAtReddit = new Date(); // Set the UpdatedAtReddit field
-
       await content.save();
       console.log("Content updated with Reddit metrics");
 
@@ -890,7 +887,7 @@ app.put("/api/edit-reddit-post/:id", authenticate, async (req, res) => {
     // Update local database
     content.title = title;
     content.response = response;
-    content.UpdatedAtReddit = new Date();
+    content.redditMetrics.lastUpdated = new Date();
     await content.save();
     console.log(`Local database updated`);
 
@@ -950,8 +947,7 @@ app.delete("/api/delete-reddit-post/:id", authenticate, async (req, res) => {
     await submission.delete();
 
     // Update local database
-    content.redditMetrics = undefined;
-    content.UpdatedAtReddit = undefined;
+    content.redditMetrics = {};
     await content.save();
 
     res.status(200).json({ message: "Reddit post deleted successfully" });
@@ -1027,7 +1023,7 @@ async function updateRedditMetrics() {
           typeof submission.num_comments === "number"
             ? submission.num_comments
             : 0,
-        lastUpdated: now,
+        lastUpdated: content.redditMetrics?.lastUpdated,
       };
 
       await content.save();
