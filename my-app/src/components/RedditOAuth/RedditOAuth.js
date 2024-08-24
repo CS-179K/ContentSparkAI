@@ -1,43 +1,71 @@
 import React, { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { message } from "antd";
+import { message, Spin } from "antd";
 import { useAuth } from "../Context/AuthContext";
+
 
 const RedditOAuth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { api } = useAuth();
 
+
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const code = urlParams.get("code");
     const error = urlParams.get("error");
 
+
+    const exchangeCodeForToken = async (code) => {
+      const processedKey = `reddit_oauth_processed_${code}`;
+      if (localStorage.getItem(processedKey)) {
+        console.log("Already processed this code, skipping");
+        navigate("/cms");
+        return;
+      }
+
+
+      localStorage.setItem(processedKey, "true");
+      console.log("Processing code:", code);
+
+
+      try {
+        const response = await api.post("/reddit-callback", { code });
+        console.log("Received response:", response.data);
+
+
+        if (response.data.success) {
+          message.success(response.data.message);
+        } else {
+          throw new Error(response.data.error || "Failed to link Reddit account");
+        }
+      } catch (error) {
+        console.error("Error linking Reddit account:", error);
+        message.error(error.response?.data?.error || error.message || "An error occurred while linking Reddit account");
+      } finally {
+        localStorage.removeItem(processedKey);
+        navigate("/cms");
+      }
+    };
+
+
     if (code) {
       exchangeCodeForToken(code);
     } else if (error) {
+      console.log("Received error from Reddit:", error);
       message.error("Reddit authorization failed: " + error);
       navigate("/cms");
-    }
-  }, [location]);
-
-  const exchangeCodeForToken = async (code) => {
-    try {
-      const response = await api.post("/reddit-callback", { code });
-      if (response.data.success) {
-        message.success("Reddit account linked successfully");
-      } else {
-        message.error("Failed to link Reddit account");
-      }
-    } catch (error) {
-      console.error("Error linking Reddit account:", error);
-      message.error("An error occurred while linking Reddit account");
-    } finally {
+    } else {
+      console.log("No authorization code received");
+      message.error("No authorization code received");
       navigate("/cms");
     }
-  };
+  }, [location, api, navigate]);
 
-  return <div>Linking your Reddit account...</div>;
+
+  return <Spin tip="Linking your Reddit account..." />;
 };
 
+
 export default RedditOAuth;
+

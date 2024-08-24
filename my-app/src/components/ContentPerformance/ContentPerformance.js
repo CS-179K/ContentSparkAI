@@ -1,17 +1,24 @@
 import React, { useState, useEffect } from "react";
-import { Table, Button, message } from "antd";
+import { Table, Button, message, Space, Typography } from "antd";
 import moment from "moment";
-import { RedditOutlined } from "@ant-design/icons";
+import {
+  RedditOutlined,
+  EditOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import { useAuth } from "../Context/AuthContext";
 import AppHeader from "../Header/AppHeader";
-import ReviewModal from "./ReviewModal"; // Import the ReviewModal component
+import ReviewModal from "./ReviewModal";
+
+const { Text } = Typography;
 
 const ContentPerformance = () => {
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isRedditLinked, setIsRedditLinked] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedContent, setSelectedContent] = useState({ title: '', response: '' });
+  const [selectedContent, setSelectedContent] = useState({});
+  const [lastFetchedTime, setLastFetchedTime] = useState(null);
   const { api } = useAuth();
 
   const checkRedditLinkStatus = async () => {
@@ -35,17 +42,17 @@ const ContentPerformance = () => {
     try {
       // Call the API to update Reddit metrics
       await api.get("/update-reddit-metrics");
-  
+
       // Once metrics are updated, fetch the updated content
       const response = await api.get("/get-history");
       setContent(response.data);
+      setLastFetchedTime(new Date());
     } catch (error) {
       message.error("Failed to fetch content");
     } finally {
       setLoading(false);
     }
   };
-  
 
   const handleLinkReddit = async () => {
     try {
@@ -56,49 +63,82 @@ const ContentPerformance = () => {
     }
   };
 
-  const handlePostToReddit = async (contentId) => {
-    setLoading(true);
+  const showModal = (record) => {
+    console.log("Selected Record:", record);
+    setSelectedContent({
+      _id: record._id,
+      title: record.title,
+      response: record.response,
+    });
+    setIsModalVisible(true);
+  };
+
+  const handleModalConfirm = async (updatedTitle, updatedResponse) => {
+    if (!selectedContent) return;
+
+    const contentId = selectedContent._id;
+    setIsModalVisible(false);
+
+    console.log("Selected content:", selectedContent);
+    console.log("Updating content with ID:", contentId);
+
+    const isExistingPost = selectedContent.postId;
+    console.log("Is existing post:", isExistingPost);
+
     try {
-      await api.post(`/post-to-reddit/${contentId}`);
-      message.success("Content posted to Reddit successfully");
-      fetchContent();
-    } catch (error) {
-      if (error.response && error.response.status === 400) {
-        message.error(
-          "Reddit account not linked. Please link your account first."
-        );
+      let response;
+      if (isExistingPost) {
+        console.log("Attempting to edit existing Reddit post");
+        response = await api.put(`/edit-reddit-post/${contentId}`, {
+          title: updatedTitle,
+          response: updatedResponse,
+        });
+        console.log("Edit response:", response.data);
+        message.success("Reddit post updated successfully");
       } else {
-        message.error("Failed to post content to Reddit");
+        console.log("Attempting to create new Reddit post");
+        response = await api.post(`/post-to-reddit/${contentId}`, {
+          title: updatedTitle,
+          response: updatedResponse,
+        });
+        console.log("Post response:", response.data);
+        message.success("Content posted to Reddit successfully");
       }
-    } finally {
-      setLoading(false);
+
+      await fetchContent();
+    } catch (error) {
+      console.error(
+        "Error updating/posting content:",
+        error.response?.data || error.message
+      );
+      message.error("Failed to update or post content to Reddit");
     }
   };
-  
-  const showModal = (record) => {
-    console.log("Selected Record:", record);  // Debugging line
-    setSelectedContent({ _id: record._id, title: record.title, response: record.response });
-    setIsModalVisible(true);
-};
- 
-const handleModalConfirm = (updatedTitle, updatedResponse) => {
-  const contentId = selectedContent._id;  
-  setIsModalVisible(false);
 
-  if (updatedTitle !== selectedContent.title || updatedResponse !== selectedContent.response) {
-      // If the content was modified, update it in the database first
-      api.put(`/update-content/${contentId}`, { title: updatedTitle, response: updatedResponse })
-          .then(() => {
-              handlePostToReddit(contentId, updatedTitle, updatedResponse);
-          })
-          .catch(error => {
-              message.error("Failed to update content");
-              console.error("Error updating content:", error);
-          });
-  } else {
-      handlePostToReddit(contentId, updatedTitle, updatedResponse);
-  }
-};
+  const handleEditRedditPost = async (contentId) => {
+    try {
+      const contentToEdit = content.find((item) => item._id === contentId);
+      setSelectedContent({
+        _id: contentId,
+        title: contentToEdit.title,
+        response: contentToEdit.response,
+        postId: contentToEdit?.redditMetrics?.postId,
+      });
+      setIsModalVisible(true);
+    } catch (error) {
+      message.error("Failed to edit Reddit post");
+    }
+  };
+
+  const handleDeleteRedditPost = async (contentId) => {
+    try {
+      await api.delete(`/delete-reddit-post/${contentId}`);
+      message.success("Post deleted from Reddit successfully");
+      fetchContent();
+    } catch (error) {
+      message.error("Failed to delete post from Reddit");
+    }
+  };
 
   const handleModalCancel = () => {
     setIsModalVisible(false);
@@ -127,8 +167,10 @@ const handleModalConfirm = (updatedTitle, updatedResponse) => {
       title: "Posted At Reddit", // New column for UpdatedAtReddit
       dataIndex: "UpdatedAtReddit",
       key: "UpdatedAtReddit",
-      sorter: (a, b) => moment(a.UpdatedAtReddit).unix() - moment(b.UpdatedAtReddit).unix(),
-      render: (value) => value ? moment(value).format("YYYY-MM-DD HH:mm:ss") : "—",
+      sorter: (a, b) =>
+        moment(a.UpdatedAtReddit).unix() - moment(b.UpdatedAtReddit).unix(),
+      render: (value) =>
+        value ? moment(value).format("YYYY-MM-DD HH:mm:ss") : "—",
     },
     {
       title: "Upvotes",
@@ -253,38 +295,70 @@ const handleModalConfirm = (updatedTitle, updatedResponse) => {
       title: "Action",
       key: "action",
       render: (_, record) => (
-        <Button
-          onClick={() => showModal(record)}
-          type="primary"
-          disabled={record.redditMetrics?.postId}
-        >
-          {record.redditMetrics?.postId ? "Posted" : "Post to Reddit"}
-        </Button>
+        <Space>
+          {record.redditMetrics?.postId ? (
+            <>
+              <Button
+                type="primary"
+                icon={<EditOutlined />}
+                onClick={() => handleEditRedditPost(record._id)}
+                disabled={!isRedditLinked}
+              >
+                Edit
+              </Button>
+              <Button
+                type="primary"
+                icon={<DeleteOutlined />}
+                danger
+                onClick={() => handleDeleteRedditPost(record._id)}
+                disabled={!isRedditLinked}
+              >
+                Delete
+              </Button>
+            </>
+          ) : (
+            <Button
+              onClick={() => showModal(record)}
+              type="primary"
+              disabled={!isRedditLinked}
+            >
+              Post to Reddit
+            </Button>
+          )}
+        </Space>
       ),
     },
   ];
+
+  const getLastFetchedText = () => {
+    if (!lastFetchedTime) return "Never";
+    return moment(lastFetchedTime).fromNow();
+  };
 
   return (
     <>
       <AppHeader />
       <div style={{ padding: "24px" }}>
-        <Button
-          type="primary"
-          icon={<RedditOutlined />}
-          onClick={handleLinkReddit}
-          style={{
-            backgroundColor: "#FF4500",
-            borderColor: "#FF4500",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: "5px",
-            marginBottom: "20px",
-          }}
-          disabled={isRedditLinked}
-        >
-          Link Reddit Account
-        </Button>
+        <Space style={{ marginBottom: "20px" }}>
+          <Button
+            type="primary"
+            icon={<RedditOutlined />}
+            onClick={handleLinkReddit}
+            style={{
+              backgroundColor: "#FF4500",
+              borderColor: "#FF4500",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "5px",
+              marginBottom: "20px",
+            }}
+            disabled={isRedditLinked}
+          >
+            Link Reddit Account
+          </Button>
+          <Text>Last fetched: {getLastFetchedText()}</Text>
+        </Space>
         <Table
           columns={columns}
           dataSource={content}
@@ -300,6 +374,7 @@ const handleModalConfirm = (updatedTitle, updatedResponse) => {
         response={selectedContent.response}
         onConfirm={handleModalConfirm}
         onCancel={handleModalCancel}
+        isExistingPost={!!selectedContent?.postId}
       />
     </>
   );
