@@ -65,7 +65,7 @@ ContentSparkAI is a web application designed to empower content creators and mar
 ![Diagram](https://github.com/CS-179K/projectPPSS/blob/main/Burndown/arc.png?raw=true)
 
 ## DB Schema
-![Diagram](https://github.com/CS-179K/projectPPSS/blob/main/Burndown/db_schema.png?raw=true)
+![Diagram](https://github.com/CS-179K/projectPPSS/blob/main/Burndown/final_schema.png?raw=true)
 
 ## Mock UI
 [View PDF](https://github.com/CS-179K/projectPPSS/blob/main/Burndown/UI.pdf?raw=true)
