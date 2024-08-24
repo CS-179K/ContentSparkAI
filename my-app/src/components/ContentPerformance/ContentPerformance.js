@@ -19,6 +19,7 @@ const ContentPerformance = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedContent, setSelectedContent] = useState({});
   const [lastFetchedTime, setLastFetchedTime] = useState(null);
+  const [, forceUpdate] = useState();
   const { api } = useAuth();
 
   const checkRedditLinkStatus = async () => {
@@ -33,8 +34,12 @@ const ContentPerformance = () => {
   useEffect(() => {
     fetchContent();
     checkRedditLinkStatus();
-    const intervalId = setInterval(fetchContent, 120000);
-    return () => clearInterval(intervalId);
+    const fetchIntervalId = setInterval(fetchContent, 120000);
+    const updateIntervalId = setInterval(() => forceUpdate({}), 60000);
+    return () => {
+      clearInterval(fetchIntervalId);
+      clearInterval(updateIntervalId);
+    };
   }, []);
 
   const fetchContent = async () => {
@@ -332,14 +337,22 @@ const ContentPerformance = () => {
 
   const getLastFetchedText = () => {
     if (!lastFetchedTime) return "Never";
-    return moment(lastFetchedTime).fromNow();
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - lastFetchedTime) / 1000);
+    
+    if (diffInSeconds >= 60 && diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    } else {
+      return moment(lastFetchedTime).fromNow();
+    }
   };
 
   return (
     <>
       <AppHeader />
       <div style={{ padding: "24px" }}>
-        <Space style={{ marginBottom: "20px" }}>
+        <Space style={{ marginBottom: "20px", flexWrap: "wrap" }}>
           <Button
             type="primary"
             icon={<RedditOutlined />}
@@ -351,7 +364,6 @@ const ContentPerformance = () => {
               alignItems: "center",
               justifyContent: "center",
               borderRadius: "5px",
-              marginBottom: "20px",
             }}
             disabled={isRedditLinked}
           >
