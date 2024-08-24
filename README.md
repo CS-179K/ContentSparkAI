@@ -37,7 +37,7 @@ npm install
 Create a `.env` file in the `backend` directory and add the following variables:
 ```
 PORT=5005
-MONGO_URI=mongodb://localhost:27017/contentsparkdb
+MONGO_URI=mongodb://localhost:27017/local
 JWT_SECRET=your_jwt_secret_here
 JWT_REFRESH_SECRET=your_jwt_refresh_secret_here
 REDDIT_CLIENT_ID=your_reddit_client_id
