@@ -21,6 +21,11 @@ ContentSparkAI is a web application designed to empower content creators and mar
 - MongoDB (v4.4 or later)
 - Git
 
+### MongoDB Installation
+For detailed instructions on installing MongoDB, please refer to these video tutorials:
+- Windows: [MongoDB Windows Installation Guide](https://www.youtube.com/watch?v=qyr_JSEFbEA)
+- Mac: [MongoDB Mac Installation Guide](https://www.youtube.com/watch?v=8gUQL2zlpvI)
+
 ### Step 1: Clone the Repository
 ```bash
 git clone https://github.com/yourusername/ContentSparkAI.git
