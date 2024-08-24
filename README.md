@@ -13,6 +13,74 @@ ContentSparkAI is a web application designed to empower content creators and mar
 - **Content Generation**: Create content tailored to specific needs such as blog posts, ad campaigns, social media posts, and product descriptions.
 - **Save Favorites**: Save your favorite content pieces for quick access and future inspiration.
 
+## Installation Instructions
+
+### Prerequisites
+- Node.js (v14 or later)
+- npm (usually comes with Node.js)
+- MongoDB (v4.4 or later)
+- Git
+
+### MongoDB Installation
+For detailed instructions on installing MongoDB, please refer to these video tutorials:
+- Windows: [MongoDB Windows Installation Guide](https://www.youtube.com/watch?v=qyr_JSEFbEA)
+- Mac: [MongoDB Mac Installation Guide](https://www.youtube.com/watch?v=8gUQL2zlpvI)
+
+### Step 1: Clone the Repository
+```bash
+git clone https://github.com/yourusername/ContentSparkAI.git
+cd ContentSparkAI
+```
+
+### Step 2: Install Backend Dependencies
+```bash
+cd backend
+npm install
+```
+
+### Step 3: Set Up Environment Variables
+Create a `.env` file in the `backend` directory and add the following variables:
+```
+PORT=5005
+MONGO_URI=mongodb://localhost:27017/local
+JWT_SECRET=your_jwt_secret_here
+JWT_REFRESH_SECRET=your_jwt_refresh_secret_here
+REDDIT_CLIENT_ID=your_reddit_client_id
+REDDIT_CLIENT_SECRET=your_reddit_client_secret
+REDDIT_REDIRECT_URI=http://localhost:3000/reddit-callback
+REDDIT_USER_AGENT=your_reddit_user_agent
+```
+Replace the placeholder values with your actual credentials.
+
+### Step 4: Install Frontend Dependencies
+```bash
+cd ../frontend
+npm install
+```
+
+### Step 5: Set Up Frontend Environment Variables
+Create a `.env` file in the `frontend` directory and add:
+```
+REACT_APP_API_BASE_URL=http://localhost:5005
+REACT_APP_GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id
+REACT_APP_GOOGLE_API_KEY=your_google_api_key
+```
+
+### Step 6: Start the Backend Server
+```bash
+cd ../backend
+npm start
+```
+
+### Step 7: Start the Frontend Development Server
+Open a new terminal window:
+```bash
+cd frontend
+npm start
+```
+
+The application should now be running on `http://localhost:3000`.
+
 ## User Stories
 ### Specification of Detailed Filters
 - **Story**: As a user, I want to specify detailed filters to generate content tailored to my needs such as type, industry, and demographic characteristics.
@@ -65,7 +133,7 @@ ContentSparkAI is a web application designed to empower content creators and mar
 ![Diagram](https://github.com/CS-179K/projectPPSS/blob/main/Burndown/arc.png?raw=true)
 
 ## DB Schema
-![Diagram](https://github.com/CS-179K/projectPPSS/blob/main/Burndown/db_schema.png?raw=true)
+![Diagram](https://github.com/CS-179K/projectPPSS/blob/main/Burndown/final_schema.png?raw=true)
 
 ## Mock UI
 [View PDF](https://github.com/CS-179K/projectPPSS/blob/main/Burndown/UI.pdf?raw=true)
