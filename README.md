@@ -129,6 +129,9 @@ The application should now be running on `http://localhost:3000`.
 - **GPT/Claude API**: AI API that will generate content.
 - **Mongoose**: For database management.
 
+## Executive Summary
+[View PDF](https://github.com/CS-179K/projectPPSS/blob/main/Burndown/Executive_Summary.pdf?raw=true)
+
 ## Architecture
 ![Diagram](https://github.com/CS-179K/projectPPSS/blob/main/Burndown/arc.png?raw=true)
 
