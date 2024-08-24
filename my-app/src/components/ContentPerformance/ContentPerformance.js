@@ -54,7 +54,6 @@ const ContentPerformance = () => {
     }
   };
 
-
   const handleLinkReddit = async () => {
     try {
       const response = await api.get("/reddit-auth");
@@ -64,7 +63,6 @@ const ContentPerformance = () => {
     }
   };
 
-
   const showModal = (record) => {
     console.log("Selected Record:", record);
     setSelectedContent({
@@ -73,6 +71,48 @@ const ContentPerformance = () => {
       response: record.response,
     });
     setIsModalVisible(true);
+  };
+
+  const handleModalConfirm = async (updatedTitle, updatedResponse) => {
+    if (!selectedContent) return;
+
+    const contentId = selectedContent._id;
+    setIsModalVisible(false);
+
+    console.log("Selected content:", selectedContent);
+    console.log("Updating content with ID:", contentId);
+
+    const isExistingPost = selectedContent.postId;
+    console.log("Is existing post:", isExistingPost);
+
+    try {
+      let response;
+      if (isExistingPost) {
+        console.log("Attempting to edit existing Reddit post");
+        response = await api.put(`/edit-reddit-post/${contentId}`, {
+          title: updatedTitle,
+          response: updatedResponse,
+        });
+        console.log("Edit response:", response.data);
+        message.success("Reddit post updated successfully");
+      } else {
+        console.log("Attempting to create new Reddit post");
+        response = await api.post(`/post-to-reddit/${contentId}`, {
+          title: updatedTitle,
+          response: updatedResponse,
+        });
+        console.log("Post response:", response.data);
+        message.success("Content posted to Reddit successfully");
+      }
+
+      await fetchContent();
+    } catch (error) {
+      console.error(
+        "Error updating/posting content:",
+        error.response?.data || error.message
+      );
+      message.error("Failed to update or post content to Reddit");
+    }
   };
 
   const handleEditRedditPost = async (contentId) => {
@@ -259,6 +299,7 @@ const ContentPerformance = () => {
           {record.redditMetrics?.postId ? (
             <>
               <Button
+                type="primary"
                 icon={<EditOutlined />}
                 onClick={() => handleEditRedditPost(record._id)}
                 disabled={!isRedditLinked}
@@ -266,6 +307,7 @@ const ContentPerformance = () => {
                 Edit
               </Button>
               <Button
+                type="primary"
                 icon={<DeleteOutlined />}
                 danger
                 onClick={() => handleDeleteRedditPost(record._id)}
@@ -330,7 +372,7 @@ const ContentPerformance = () => {
         visible={isModalVisible}
         title={selectedContent.title}
         response={selectedContent.response}
-        onConfirm={handleEditRedditPost}
+        onConfirm={handleModalConfirm}
         onCancel={handleModalCancel}
         isExistingPost={!!selectedContent?.postId}
       />
@@ -339,6 +381,3 @@ const ContentPerformance = () => {
 };
 
 export default ContentPerformance;
-
-
-
