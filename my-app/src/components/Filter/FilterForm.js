@@ -82,12 +82,13 @@ const FilterForm = ({
   };
 
   const handleChange = (changedValues, allValues) => {
-    if (!isTutorialActive) {
-      onChange(allValues);
-    } else if (tutorialStep === 0 && changedValues.contentType) {
-      onStepComplete();
-    } else if (tutorialStep === 1 && changedValues.industry) {
-      onStepComplete();
+    onChange(allValues);
+    if (isTutorialActive) {
+      if (tutorialStep === 0 && changedValues.contentType) {
+        onStepComplete();
+      } else if (tutorialStep === 1 && changedValues.industry) {
+        onStepComplete();
+      }
     }
   };
 
