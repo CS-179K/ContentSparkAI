@@ -143,10 +143,10 @@ const contentSchema = new mongoose.Schema(
     title: String,
     isFavourite: { type: Boolean, default: false },
     redditMetrics: {
-      postId: String,
+      postId: { type: String, default: null },
       upvotes: { type: Number, default: 0 },
       comments: { type: Number, default: 0 },
-      lastUpdated: Date,
+      lastUpdated: { type: Date, default: null },
     },
   },
   { timestamps: true }
@@ -331,7 +331,7 @@ const contentValidationRules = [
     .customSanitizer((value) =>
       Array.isArray(value)
         ? value.map((item) =>
-            typeof item === "string" ? item.trim().escape() : item
+            typeof item === "string" ? item.trim() : item
           )
         : []
     ),
@@ -344,7 +344,7 @@ const contentValidationRules = [
     .customSanitizer((value) =>
       Array.isArray(value)
         ? value.map((item) =>
-            typeof item === "string" ? item.trim().escape() : item
+            typeof item === "string" ? item.trim() : item
           )
         : []
     ),
@@ -878,13 +878,18 @@ app.put("/api/edit-reddit-post/:id", authenticate, async (req, res) => {
   }
 });
 
-app.get('/api/fetch-reddit-post/:id', authenticate, async (req, res) => {
+app.get("/api/fetch-reddit-post/:id", authenticate, async (req, res) => {
   const { id } = req.params;
 
   try {
-    const content = await GeneratedContent.findOne({ _id: id, userId: req.userId });
+    const content = await GeneratedContent.findOne({
+      _id: id,
+      userId: req.userId,
+    });
     if (!content || !content.redditMetrics?.postId) {
-      return res.status(404).json({ message: "Content not found or not posted to Reddit" });
+      return res
+        .status(404)
+        .json({ message: "Content not found or not posted to Reddit" });
     }
 
     const user = await User.findById(req.userId);
@@ -899,7 +904,9 @@ app.get('/api/fetch-reddit-post/:id', authenticate, async (req, res) => {
       refreshToken: user.redditRefreshToken,
     });
 
-    const submission = await r.getSubmission(content.redditMetrics.postId).fetch();
+    const submission = await r
+      .getSubmission(content.redditMetrics.postId)
+      .fetch();
     const author = await submission.author.name;
     if (author === "[deleted]") {
       // Post has been deleted on Reddit
@@ -923,7 +930,12 @@ app.get('/api/fetch-reddit-post/:id', authenticate, async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching Reddit post:", error);
-    res.status(500).json({ message: "Failed to fetch Reddit post", error: error.toString() });
+    res
+      .status(500)
+      .json({
+        message: "Failed to fetch Reddit post",
+        error: error.toString(),
+      });
   }
 });
 
