@@ -870,6 +870,15 @@ app.put("/api/edit-reddit-post/:id", authenticate, async (req, res) => {
       `Fetching Reddit submission with ID: ${content.redditMetrics.postId}`
     );
     const submission = await r.getSubmission(content.redditMetrics.postId);
+    const author = await submission.author.name;
+    if (author === "[deleted]") {
+      // Post has been deleted on Reddit
+      content.redditMetrics = {};
+      await content.save();
+      return res
+        .status(410)
+        .json({ message: "Post has already been deleted from Reddit" });
+    }
 
     // Check if the authenticated user is the author of the post
     const postAuthor = await submission.author.name;
@@ -899,19 +908,15 @@ app.put("/api/edit-reddit-post/:id", authenticate, async (req, res) => {
   } catch (error) {
     console.error("Error editing Reddit post:", error);
     if (error.response && error.response.status === 403) {
-      res
-        .status(403)
-        .json({
-          message: "Forbidden: You may not have permission to edit this post",
-        });
+      res.status(403).json({
+        message: "Forbidden: You may not have permission to edit this post",
+      });
     } else {
       console.log("FAILED TO EDIT: ", error);
-      res
-        .status(500)
-        .json({
-          message: "Failed to edit Reddit post",
-          error: error.toString(),
-        });
+      res.status(500).json({
+        message: "Failed to edit Reddit post",
+        error: error.toString(),
+      });
     }
   }
 });
@@ -944,6 +949,15 @@ app.delete("/api/delete-reddit-post/:id", authenticate, async (req, res) => {
     });
 
     const submission = await r.getSubmission(content.redditMetrics.postId);
+    const author = await submission.author.name;
+    if (author === "[deleted]") {
+      // Post has been deleted on Reddit
+      content.redditMetrics = {};
+      await content.save();
+      return res
+        .status(410)
+        .json({ message: "Post has already been deleted from Reddit" });
+    }
     await submission.delete();
 
     // Update local database
@@ -953,12 +967,10 @@ app.delete("/api/delete-reddit-post/:id", authenticate, async (req, res) => {
     res.status(200).json({ message: "Reddit post deleted successfully" });
   } catch (error) {
     console.error("Error deleting Reddit post:", error);
-    res
-      .status(500)
-      .json({
-        message: "Failed to delete Reddit post",
-        error: error.toString(),
-      });
+    res.status(500).json({
+      message: "Failed to delete Reddit post",
+      error: error.toString(),
+    });
   }
 });
 
@@ -1046,7 +1058,6 @@ async function updateRedditMetrics() {
 // Get user tutorial status
 app.get("/api/user-tutorial-status", authenticate, async (req, res) => {
   try {
-    
     const user = await User.findById(req.userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });

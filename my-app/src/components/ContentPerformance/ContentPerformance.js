@@ -116,7 +116,13 @@ const ContentPerformance = () => {
         "Error updating/posting content:",
         error.response?.data || error.message
       );
-      message.error("Failed to update or post content to Reddit");
+      if (error.response?.status === 410) {
+        fetchContent();
+      }
+      message.error(
+        error.response?.data?.message ??
+          "Failed to update or post content to Reddit"
+      );
     }
   };
 
@@ -141,7 +147,10 @@ const ContentPerformance = () => {
       message.success("Post deleted from Reddit successfully");
       fetchContent();
     } catch (error) {
-      message.error("Failed to delete post from Reddit");
+      if (error.response?.status === 410) {
+        fetchContent();
+      }
+      message.error(error.response?.data?.message);
     }
   };
 
@@ -173,7 +182,8 @@ const ContentPerformance = () => {
       dataIndex: ["redditMetrics", "lastUpdated"],
       key: "lastUpdated",
       sorter: (a, b) =>
-        moment(a.redditMetrics?.lastUpdated).unix() - moment(b.redditMetrics?.lastUpdated).unix(),
+        moment(a.redditMetrics?.lastUpdated).unix() -
+        moment(b.redditMetrics?.lastUpdated).unix(),
       render: (value) =>
         value ? moment(value).format("YYYY-MM-DD HH:mm:ss") : "—",
     },
@@ -339,10 +349,10 @@ const ContentPerformance = () => {
     if (!lastFetchedTime) return "Never";
     const now = new Date();
     const diffInSeconds = Math.floor((now - lastFetchedTime) / 1000);
-    
+
     if (diffInSeconds >= 60 && diffInSeconds < 3600) {
       const minutes = Math.floor(diffInSeconds / 60);
-      return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+      return `${minutes} minute${minutes !== 1 ? "s" : ""} ago`;
     } else {
       return moment(lastFetchedTime).fromNow();
     }
