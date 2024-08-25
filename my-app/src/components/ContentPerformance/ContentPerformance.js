@@ -50,6 +50,10 @@ const ContentPerformance = () => {
 
       // Once metrics are updated, fetch the updated content
       const response = await api.get("/get-history");
+      response.data.forEach(content => {
+        content.title = decodeHTMLEntities(content.title);
+        content.response = decodeHTMLEntities(content.response);
+      });
       setContent(response.data);
       setLastFetchedTime(new Date());
     } catch (error) {
@@ -57,6 +61,13 @@ const ContentPerformance = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const decodeHTMLEntities = (str) => {
+    const parser = new DOMParser();
+    const decodedString = parser.parseFromString(str, "text/html")
+      .documentElement.textContent;
+    return decodedString;
   };
 
   const handleLinkReddit = async () => {
