@@ -921,6 +921,46 @@ app.put("/api/edit-reddit-post/:id", authenticate, async (req, res) => {
   }
 });
 
+app.get('/api/fetch-reddit-post/:id', authenticate, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const content = await GeneratedContent.findOne({ _id: id, userId: req.userId });
+    if (!content || !content.redditMetrics?.postId) {
+      return res.status(404).json({ message: "Content not found or not posted to Reddit" });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user.redditRefreshToken) {
+      return res.status(400).json({ message: "Reddit account not linked" });
+    }
+
+    const r = new snoowrap({
+      userAgent: process.env.REDDIT_USER_AGENT,
+      clientId: process.env.REDDIT_CLIENT_ID,
+      clientSecret: process.env.REDDIT_CLIENT_SECRET,
+      refreshToken: user.redditRefreshToken,
+    });
+
+    const submission = await r.getSubmission(content.redditMetrics.postId).fetch();
+    const shouldUpdate = submission.selftext !== content.response;
+    if (shouldUpdate) {
+      // Update the local database if the content has changed
+      content.response = submission.selftext;
+      await content.save();
+    }
+
+    res.status(200).json({
+      title: submission.title,
+      response: submission.selftext,
+      updatedLocally: shouldUpdate,
+    });
+  } catch (error) {
+    console.error("Error fetching Reddit post:", error);
+    res.status(500).json({ message: "Failed to fetch Reddit post", error: error.toString() });
+  }
+});
+
 // New route for deleting a Reddit post
 app.delete("/api/delete-reddit-post/:id", authenticate, async (req, res) => {
   const { id } = req.params;
@@ -1026,7 +1066,7 @@ async function updateRedditMetrics() {
       const submission = await r
         .getSubmission(content.redditMetrics.postId)
         .fetch();
-      console.log("SUBMISSION", JSON.stringify(submission, null, 2));
+      // console.log("SUBMISSION", JSON.stringify(submission, null, 2));
 
       content.redditMetrics = {
         postId: content.redditMetrics.postId,

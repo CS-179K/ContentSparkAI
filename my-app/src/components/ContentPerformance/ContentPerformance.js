@@ -19,6 +19,7 @@ const ContentPerformance = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedContent, setSelectedContent] = useState({});
   const [lastFetchedTime, setLastFetchedTime] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [, forceUpdate] = useState();
   const { api } = useAuth();
 
@@ -147,6 +148,22 @@ const ContentPerformance = () => {
         postId: contentToEdit?.redditMetrics?.postId,
       });
       setIsModalVisible(true);
+      try {
+        const response = await api.get(`/fetch-reddit-post/${contentId}`);
+        setSelectedContent(prevContent => ({
+          ...prevContent,
+          title: response.data.title,
+          response: response.data.response,
+        }));
+        if (response.data.updatedLocally) {
+          console.log("UPDATED");
+          message.info("The content has been updated to match the latest version on Reddit.");
+        }
+      } catch (error) {
+        message.error("Failed to fetch the latest content from Reddit");
+      } finally {
+        setIsLoading(false);
+      }
     } catch (error) {
       message.error("Failed to edit Reddit post");
     }
@@ -408,6 +425,7 @@ const ContentPerformance = () => {
         onConfirm={handleModalConfirm}
         onCancel={handleModalCancel}
         isExistingPost={!!selectedContent?.postId}
+        loading={isLoading}
       />
     </>
   );
