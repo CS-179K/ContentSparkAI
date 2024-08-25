@@ -714,39 +714,11 @@ app.post("/api/post-to-reddit/:id", authenticate, async (req, res) => {
       return res.status(400).json({ message: "Reddit account not linked" });
     }
 
-    console.log("Refreshing Reddit access token");
-    let tokenResponse;
-    try {
-      tokenResponse = await axios.post(
-        "https://www.reddit.com/api/v1/access_token",
-        `grant_type=refresh_token&refresh_token=${user.redditRefreshToken}`,
-        {
-          auth: {
-            username: process.env.REDDIT_CLIENT_ID,
-            password: process.env.REDDIT_CLIENT_SECRET,
-          },
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        }
-      );
-      console.log("Token refresh successful");
-    } catch (error) {
-      console.error(
-        "Error refreshing Reddit token:",
-        error.response?.data || error.message
-      );
-      return res
-        .status(401)
-        .json({ message: "Failed to refresh Reddit token" });
-    }
-
-    const { access_token } = tokenResponse.data;
-
-    console.log("Initializing snoowrap");
     const r = new snoowrap({
       userAgent: process.env.REDDIT_USER_AGENT,
-      accessToken: access_token,
+      clientId: process.env.REDDIT_CLIENT_ID,
+      clientSecret: process.env.REDDIT_CLIENT_SECRET,
+      refreshToken: user.redditRefreshToken,
     });
 
     console.log("Getting Reddit user info");
@@ -844,26 +816,11 @@ app.put("/api/edit-reddit-post/:id", authenticate, async (req, res) => {
       return res.status(400).json({ message: "Reddit account not linked" });
     }
 
-    // Refresh the access token
-    const tokenResponse = await axios.post(
-      "https://www.reddit.com/api/v1/access_token",
-      `grant_type=refresh_token&refresh_token=${user.redditRefreshToken}`,
-      {
-        auth: {
-          username: process.env.REDDIT_CLIENT_ID,
-          password: process.env.REDDIT_CLIENT_SECRET,
-        },
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
-    );
-
-    const accessToken = tokenResponse.data.access_token;
-
     const r = new snoowrap({
       userAgent: process.env.REDDIT_USER_AGENT,
-      accessToken: accessToken,
+      clientId: process.env.REDDIT_CLIENT_ID,
+      clientSecret: process.env.REDDIT_CLIENT_SECRET,
+      refreshToken: user.redditRefreshToken,
     });
 
     console.log(
@@ -943,6 +900,15 @@ app.get('/api/fetch-reddit-post/:id', authenticate, async (req, res) => {
     });
 
     const submission = await r.getSubmission(content.redditMetrics.postId).fetch();
+    const author = await submission.author.name;
+    if (author === "[deleted]") {
+      // Post has been deleted on Reddit
+      content.redditMetrics = {};
+      await content.save();
+      return res
+        .status(410)
+        .json({ message: "Post has already been deleted from Reddit" });
+    }
     const shouldUpdate = submission.selftext !== content.response;
     if (shouldUpdate) {
       // Update the local database if the content has changed

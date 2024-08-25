@@ -160,7 +160,11 @@ const ContentPerformance = () => {
           message.info("The content has been updated to match the latest version on Reddit.");
         }
       } catch (error) {
-        message.error("Failed to fetch the latest content from Reddit");
+        message.error(error.response?.data?.message ?? "Failed to fetch the latest content from Reddit");
+        if(error.response?.status === 410) {
+          await fetchContent();
+          setIsModalVisible(false);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -194,6 +198,7 @@ const ContentPerformance = () => {
       title: "Title",
       dataIndex: "title",
       key: "title",
+      fixed: 'left',
       sorter: (a, b) => a.title.localeCompare(b.title),
       render: renderValue,
     },
@@ -337,6 +342,7 @@ const ContentPerformance = () => {
     {
       title: "Action",
       key: "action",
+      fixed: 'right',
       render: (_, record) => (
         <Space>
           {record.redditMetrics?.postId ? (
