@@ -1001,22 +1001,22 @@ async function updateRedditMetrics() {
     const hoursSinceLastUpdate = postAge / (1000 * 60 * 60);
 
     // Update frequency based on post age
-    if (
-      hoursSinceLastUpdate < 1 &&
-      new Date(content.redditMetrics.lastUpdated) -
-        new Date(content.createdAt) >
-        1000 * 60 * 60
-    ) {
-      console.log(
-        `Skipping post ${content.redditMetrics.postId} - updated less than an hour ago`
-      );
-      continue;
-    } else if (hoursSinceLastUpdate < 24 && postAge > 1000 * 60 * 60 * 24) {
-      console.log(
-        `Skipping post ${content.redditMetrics.postId} - older than a day and updated in last 24 hours`
-      );
-      continue;
-    }
+    // if (
+    //   hoursSinceLastUpdate < 1 &&
+    //   new Date(content.redditMetrics.lastUpdated) -
+    //     new Date(content.createdAt) >
+    //     1000 * 60 * 60
+    // ) {
+    //   console.log(
+    //     `Skipping post ${content.redditMetrics.postId} - updated less than an hour ago`
+    //   );
+    //   continue;
+    // } else if (hoursSinceLastUpdate < 24 && postAge > 1000 * 60 * 60 * 24) {
+    //   console.log(
+    //     `Skipping post ${content.redditMetrics.postId} - older than a day and updated in last 24 hours`
+    //   );
+    //   continue;
+    // }
 
     try {
       const r = new snoowrap({
