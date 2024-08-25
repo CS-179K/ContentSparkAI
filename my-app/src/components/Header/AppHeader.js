@@ -31,7 +31,6 @@ const AppHeader = ({ isTutorialActive = false }) => {
 
   const handleLogout = () => {
     logout();
-    navigate("/");
   };
 
   const menuItemStyle = {

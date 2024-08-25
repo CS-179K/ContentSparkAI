@@ -113,6 +113,10 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
+      if (!isAuthenticated) {
+        setLoading(false);
+        return;
+      }
       try {
         const response = await api.get("/check");
         setIsAuthenticated(response.data.isAuthenticated);
@@ -126,7 +130,7 @@ export const AuthProvider = ({ children }) => {
       }
     };
     checkAuth();
-  }, []);
+  }, [isAuthenticated]);
 
   return (
     <AuthContext.Provider
