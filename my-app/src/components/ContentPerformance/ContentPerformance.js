@@ -21,7 +21,7 @@ const ContentPerformance = () => {
   const [lastFetchedTime, setLastFetchedTime] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [, forceUpdate] = useState();
-  const { api } = useAuth();
+  const { api, isLogout } = useAuth();
 
   const checkRedditLinkStatus = async () => {
     try {
@@ -51,14 +51,16 @@ const ContentPerformance = () => {
 
       // Once metrics are updated, fetch the updated content
       const response = await api.get("/get-history");
-      response.data.forEach(content => {
+      response.data.forEach((content) => {
         content.title = decodeHTMLEntities(content.title);
         content.response = decodeHTMLEntities(content.response);
       });
       setContent(response.data);
       setLastFetchedTime(new Date());
     } catch (error) {
-      message.error("Failed to fetch content");
+      if (!isLogout) {
+        message.error("Failed to fetch content");
+      }
     } finally {
       setLoading(false);
     }
@@ -76,7 +78,9 @@ const ContentPerformance = () => {
       const response = await api.get("/reddit-auth");
       window.location.href = response.data.url;
     } catch (error) {
-      message.error("Failed to initiate Reddit authentication");
+      if (!isLogout) {
+        message.error("Failed to initiate Reddit authentication");
+      }
     }
   };
 
@@ -131,10 +135,12 @@ const ContentPerformance = () => {
       if (error.response?.status === 410) {
         fetchContent();
       }
-      message.error(
-        error.response?.data?.message ??
-          "Failed to update or post content to Reddit"
-      );
+      if (!isLogout) {
+        message.error(
+          error.response?.data?.message ??
+            "Failed to update or post content to Reddit"
+        );
+      }
     }
   };
 
@@ -150,18 +156,25 @@ const ContentPerformance = () => {
       setIsModalVisible(true);
       try {
         const response = await api.get(`/fetch-reddit-post/${contentId}`);
-        setSelectedContent(prevContent => ({
+        setSelectedContent((prevContent) => ({
           ...prevContent,
           title: response.data.title,
           response: response.data.response,
         }));
         if (response.data.updatedLocally) {
           console.log("UPDATED");
-          message.info("The content has been updated to match the latest version on Reddit.");
+          message.info(
+            "The content has been updated to match the latest version on Reddit."
+          );
         }
       } catch (error) {
-        message.error(error.response?.data?.message ?? "Failed to fetch the latest content from Reddit");
-        if(error.response?.status === 410) {
+        if (!isLogout) {
+          message.error(
+            error.response?.data?.message ??
+              "Failed to fetch the latest content from Reddit"
+          );
+        }
+        if (error.response?.status === 410) {
           await fetchContent();
           setIsModalVisible(false);
         }
@@ -169,7 +182,9 @@ const ContentPerformance = () => {
         setIsLoading(false);
       }
     } catch (error) {
-      message.error("Failed to edit Reddit post");
+      if (!isLogout) {
+        message.error("Failed to edit Reddit post");
+      }
     }
   };
 
@@ -182,7 +197,9 @@ const ContentPerformance = () => {
       if (error.response?.status === 410) {
         fetchContent();
       }
-      message.error(error.response?.data?.message);
+      if (!isLogout) {
+        message.error(error.response?.data?.message);
+      }
     }
   };
 
@@ -198,7 +215,7 @@ const ContentPerformance = () => {
       title: "Title",
       dataIndex: "title",
       key: "title",
-      fixed: 'left',
+      fixed: "left",
       sorter: (a, b) => a.title.localeCompare(b.title),
       render: renderValue,
     },
@@ -342,7 +359,7 @@ const ContentPerformance = () => {
     {
       title: "Action",
       key: "action",
-      fixed: 'right',
+      fixed: "right",
       render: (_, record) => (
         <Space>
           {record.redditMetrics?.postId ? (

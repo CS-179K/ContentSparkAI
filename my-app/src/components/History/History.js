@@ -28,7 +28,7 @@ const History = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState("newest");
-  const { api } = useAuth();
+  const { api, isLogout } = useAuth();
 
   const fetchHistory = useCallback(async () => {
     try {
@@ -50,7 +50,9 @@ const History = () => {
       fetchHistory();
     } catch (error) {
       console.error("Error deleting item:", error);
-      message.error(error.response?.data?.message ?? "Deletion failed");
+      if (!isLogout) {
+        message.error(error.response?.data?.message ?? "Deletion failed");
+      }
     }
   };
 
@@ -65,7 +67,9 @@ const History = () => {
       );
     } catch (error) {
       console.error("Error marking item:", error);
-      message.error(error.response?.data?.message ?? "Marking failed");
+      if (!isLogout) {
+        message.error(error.response?.data?.message ?? "Marking failed");
+      }
     }
   };
 
@@ -192,9 +196,10 @@ const History = () => {
 
   const decodeHTMLEntities = (str) => {
     const parser = new DOMParser();
-    const decodedString = parser.parseFromString(str, 'text/html').documentElement.textContent;
+    const decodedString = parser.parseFromString(str, "text/html")
+      .documentElement.textContent;
     return decodedString;
-  }
+  };
 
   return (
     <>
@@ -239,7 +244,10 @@ const History = () => {
           onCancel={handleModalClose}
           footer={
             selectedItem && (
-              <div className="prmptbtn" style={{ display: "flex", justifyContent: "flex-start" }}>
+              <div
+                className="prmptbtn"
+                style={{ display: "flex", justifyContent: "flex-start" }}
+              >
                 <Button
                   type="primary"
                   icon={<StarOutlined />}
@@ -273,7 +281,8 @@ const History = () => {
               {/* Display the createdAt timestamp in the modal */}
               <Paragraph>
                 <Text type="secondary">
-                  Created at: {new Date(selectedItem.createdAt).toLocaleString()}
+                  Created at:{" "}
+                  {new Date(selectedItem.createdAt).toLocaleString()}
                 </Text>
               </Paragraph>
               <Table

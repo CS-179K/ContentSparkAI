@@ -29,7 +29,7 @@ const Favourites = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState("newest");
-  const { api } = useAuth();
+  const { api, isLogout } = useAuth();
   const { updateCurrentFilter } = useFilter();
 
   const fetchFavourites = useCallback(async () => {
@@ -57,7 +57,9 @@ const Favourites = () => {
       fetchFavourites();
     } catch (error) {
       console.error("Error unfavoriting item:", error);
-      message.error(error.response?.data?.message ?? "Unfavorite failed");
+      if (!isLogout) {
+        message.error(error.response?.data?.message ?? "Unfavorite failed");
+      }
     }
   };
 
@@ -136,9 +138,10 @@ const Favourites = () => {
 
   const decodeHTMLEntities = (str) => {
     const parser = new DOMParser();
-    const decodedString = parser.parseFromString(str, 'text/html').documentElement.textContent;
+    const decodedString = parser.parseFromString(str, "text/html")
+      .documentElement.textContent;
     return decodedString;
-  }
+  };
 
   const Row = ({ index, style }) => {
     const item = filteredAndSortedFavourites[index];
@@ -175,7 +178,8 @@ const Favourites = () => {
                 <Title level={2}>{decodeHTMLEntities(item.title)}</Title>
               </Paragraph>
               <Paragraph ellipsis={{ rows: 2, expandable: false }}>
-                <Text strong>Response:</Text> {decodeHTMLEntities(item.response)}
+                <Text strong>Response:</Text>{" "}
+                {decodeHTMLEntities(item.response)}
               </Paragraph>
               <Paragraph ellipsis={{ rows: 1, expandable: false }}>
                 <Text type="secondary">Saved at: {formattedUpdatedAt}</Text>
@@ -255,7 +259,10 @@ const Favourites = () => {
           onCancel={handleModalClose}
           footer={
             selectedItem && (
-              <div className="prmptbtn" style={{ display: "flex", justifyContent: "flex-start" }}>
+              <div
+                className="prmptbtn"
+                style={{ display: "flex", justifyContent: "flex-start" }}
+              >
                 <Button
                   type="primary"
                   danger
@@ -289,7 +296,8 @@ const Favourites = () => {
           {selectedItem && (
             <>
               <Title level={2}>
-                {decodeHTMLEntities(selectedItem.title) || selectedItem.contentType}
+                {decodeHTMLEntities(selectedItem.title) ||
+                  selectedItem.contentType}
               </Title>
               <Paragraph>
                 <Text type="secondary">

@@ -27,7 +27,7 @@ const FilterForm = ({
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [filterTitle, setFilterTitle] = useState("");
   const [filtersToSave, setFiltersToSave] = useState(null);
-  const { api } = useAuth();
+  const { api, isLogout } = useAuth();
   const { currentFilter, updateCurrentFilter } = useFilter();
 
   useEffect(() => {
@@ -46,7 +46,9 @@ const FilterForm = ({
 
   const handleModalOk = async () => {
     if (!filterTitle.trim()) {
-      message.error("Please enter a filter name");
+      if (!isLogout) {
+        message.error("Please enter a filter name");
+      }
       return;
     }
 
@@ -64,12 +66,16 @@ const FilterForm = ({
         onStepComplete();
       }
     } catch (error) {
-      if (error.response && error.response.status === 409) {
-        message.error(
-          "A filter with this name already exists. Please choose a different name."
-        );
-      } else {
-        message.error(error.response?.data?.message ?? "Failed to save filter");
+      if (!isLogout) {
+        if (error.response && error.response.status === 409) {
+          message.error(
+            "A filter with this name already exists. Please choose a different name."
+          );
+        } else {
+          message.error(
+            error.response?.data?.message ?? "Failed to save filter"
+          );
+        }
       }
     } finally {
       setLoading(false);

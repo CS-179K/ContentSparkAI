@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isLogout, setIsLogout] = useState(false);
   const navigate = useNavigate();
 
   // Create a separate instance for token refreshing
@@ -99,10 +100,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = async () => {
+  const logout = async () => { 
     try {
+      setIsLogout(true);
       await api.post("/logout");
     } catch (error) {
+      setIsLogout(false);
       message.error(error.response?.data?.message ?? "Logout failed");
     } finally {
       setIsAuthenticated(false);
@@ -113,10 +116,6 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      if (!isAuthenticated) {
-        setLoading(false);
-        return;
-      }
       try {
         const response = await api.get("/check");
         setIsAuthenticated(response.data.isAuthenticated);
@@ -130,11 +129,11 @@ export const AuthProvider = ({ children }) => {
       }
     };
     checkAuth();
-  }, [isAuthenticated]);
+  }, []);
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, user, login, logout, api, loading }}
+      value={{ isAuthenticated, user, login, logout, api, loading, isLogout }}
     >
       {children}
     </AuthContext.Provider>

@@ -6,7 +6,7 @@ import { useAuth } from "../Context/AuthContext";
 const RedditOAuth = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { api } = useAuth();
+  const { api, isLogout } = useAuth();
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -37,11 +37,13 @@ const RedditOAuth = () => {
         }
       } catch (error) {
         console.error("Error linking Reddit account:", error);
-        message.error(
-          error.response?.data?.error ||
-            error.message ||
-            "An error occurred while linking Reddit account"
-        );
+        if (!isLogout) {
+          message.error(
+            error.response?.data?.error ||
+              error.message ||
+              "An error occurred while linking Reddit account"
+          );
+        }
       } finally {
         localStorage.removeItem(processedKey);
         navigate("/cms");
@@ -52,11 +54,15 @@ const RedditOAuth = () => {
       exchangeCodeForToken(code);
     } else if (error) {
       console.log("Received error from Reddit:", error);
-      message.error("Reddit authorization failed: " + error);
+      if (!isLogout) {
+        message.error("Reddit authorization failed: " + error);
+      }
       navigate("/cms");
     } else {
       console.log("No authorization code received");
-      message.error("No authorization code received");
+      if (!isLogout) {
+        message.error("No authorization code received");
+      }
       navigate("/cms");
     }
   }, [location, api, navigate]);

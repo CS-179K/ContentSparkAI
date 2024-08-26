@@ -23,7 +23,7 @@ const PromptPanel = ({
   const [previousContent, setPreviousContent] = useState([]);
   const [selectedContentIds, setSelectedContentIds] = useState([]);
   const [lastGeneratedContentId, setLastGeneratedContentId] = useState(null);
-  const { api } = useAuth();
+  const { api, isLogout } = useAuth();
 
   useEffect(() => {
     fetchPreviousContent();
@@ -34,7 +34,9 @@ const PromptPanel = ({
       const response = await api.get("/get-history");
       setPreviousContent(response.data);
     } catch (error) {
-      message.error("Failed to fetch previous content");
+      if (!isLogout) {
+        message.error("Failed to fetch previous content");
+      }
     }
   };
 
@@ -65,7 +67,9 @@ const PromptPanel = ({
     selectedPreviousContent
   ) => {
     if (!(selectedFilters.contentType && selectedFilters.industry)) {
-      message.error("Select both content Type and Industry from filters");
+      if (!isLogout) {
+        message.error("Select both content Type and Industry from filters");
+      }
       return;
     }
     let fullPrompt = `
@@ -171,7 +175,9 @@ const PromptPanel = ({
         }
       }
     } catch (error) {
-      message.error(error.response?.data?.message ?? "An error occurred");
+      if (!isLogout) {
+        message.error(error.response?.data?.message ?? "An error occurred");
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -184,9 +190,11 @@ const PromptPanel = ({
       message.success(result.data.message);
       fetchPreviousContent();
     } catch (error) {
-      message.error(
-        error.response?.data?.message ?? "Failed to save as favourite"
-      );
+      if (!isLogout) {
+        message.error(
+          error.response?.data?.message ?? "Failed to save as favourite"
+        );
+      }
     } finally {
       setIsSaving(false);
     }
