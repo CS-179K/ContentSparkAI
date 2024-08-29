@@ -376,7 +376,7 @@ const FilterForm = ({
         visible={isModalVisible}
         onOk={handleModalOk}
         onCancel={handleModalCancel}
-        maskStyle={{ backgroundColor: "rgba(0, 0, 0, 0.45)", zIndex: 1001 }}
+        maskStyle={{ backgroundColor: "rgba(0, 0, 0, 0.45)", zIndex: 999 }}
         style={{ zIndex: 1002 }}
       >
         <Input
