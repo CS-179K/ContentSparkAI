@@ -34,12 +34,12 @@ cd ContentSparkAI
 
 ### Step 2: Install Backend Dependencies
 ```bash
-cd backend
+cd my-backend
 npm install
 ```
 
 ### Step 3: Set Up Environment Variables
-Create a `.env` file in the `backend` directory and add the following variables:
+Create a `.env` file in the `my-backend` directory and add the following variables:
 ```
 PORT=5005
 MONGO_URI=mongodb://localhost:27017/local
@@ -54,12 +54,12 @@ Replace the placeholder values with your actual credentials.
 
 ### Step 4: Install Frontend Dependencies
 ```bash
-cd ../frontend
+cd ../my-app
 npm install
 ```
 
 ### Step 5: Set Up Frontend Environment Variables
-Create a `.env` file in the `frontend` directory and add:
+Create a `.env` file in the `my-app` directory and add:
 ```
 REACT_APP_API_BASE_URL=http://localhost:5005
 REACT_APP_GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id
@@ -68,14 +68,14 @@ REACT_APP_GOOGLE_API_KEY=your_google_api_key
 
 ### Step 6: Start the Backend Server
 ```bash
-cd ../backend
+cd ../my-backend
 npm start
 ```
 
 ### Step 7: Start the Frontend Development Server
 Open a new terminal window:
 ```bash
-cd frontend
+cd my-app
 npm start
 ```
 
