@@ -1,5 +1,8 @@
 # ContentSparkAI
 
+## Design Report
+[View PDF](https://github.com/CS-179K/projectPPSS/blob/main/Burndown/Design_Report_ContentSparkAI.pdf?raw=true)
+
 ## Overview
 ContentSparkAI is a web application designed to empower content creators and marketers by providing an intuitive, AI-driven virtual assistant for brainstorming and content generation. This application leverages AI API to generate personalized content based on detailed user-specified filters such as content type, industry, demographic factors, and more.
 
